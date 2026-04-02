@@ -1,0 +1,26 @@
+{
+    "email": "john.doe1@example.com",
+    "tokens": {
+        "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTczNjM0ODU0MywiaWF0IjoxNzM2MjYyMTQzLCJqdGkiOiJkMjNlOGRkYTgxZTY0MjdjYmM4ODU1YmY3ZWVjMTY4ZiIsInVzZXJfaWQiOjd9.c8G0SHChKldBU9oZ6MDALpyw1RfZ9VGQPGmAmoebjeM",
+        "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzM2MjY1NzQzLCJpYXQiOjE3MzYyNjIxNDMsImp0aSI6IjFlY2Q2NjBhYTg2NjQzY2JiOWI1MTk3MTc4NjliYmQzIiwidXNlcl9pZCI6N30.Qh1jeGlQnlbFgMw8eQwyPqrgsXQOUMa01whSdd3AiLw"
+    }
+}
+
+{"email":"alice.smith@example.com","tokens":{"
+refresh":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTczNjM0OTUwNywiaWF0IjoxNzM2MjYzMTA3LCJqdGkiOiJkMjIwMTZjMDdlMTg0NmUzYmZmYWQxOWNiMDc3YjQ1MiIsInVzZXJfaWQiOjEwfQ.pfOlU4K5GcL1XRzghCfw17WkBI5k1a5uOvnF2EahjzU",
+"access":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzM2MjY2NzA3LCJpYXQiOjE3MzYyNjMxMDcsImp0aSI6IjY0ZDg0Y2VlNjBhZjQ3ZjA4MmZlNzcwMzQzNjJhYmQ3IiwidXNlcl9pZCI6MTB9.Oz1LU0_O-CsjoJ93R-hnbCFjP9Yh_izkf_uIyj2GqR8"}}
+
+
+
+CREATE DATABASE telemedicine25;
+CREATE USER telemedicine_user WITH PASSWORD '2025_password';
+GRANT ALL PRIVILEGES ON DATABASE telemedicine25 TO telemedicine_user;
+
+GRANT CONNECT ON DATABASE telemedicine25 TO telemedicine_user;
+GRANT USAGE ON SCHEMA public TO telemedicine_user;
+GRANT CREATE ON SCHEMA public TO telemedicine_user;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO telemedicine_user;
+
+
+
+
