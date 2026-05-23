@@ -1,0 +1,31 @@
+<!doctype html>
+<html>
+  <body style="margin:0;background:#f3f7fb;font-family:Arial,Helvetica,sans-serif;color:#10243e;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f3f7fb;padding:28px 12px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;background:#ffffff;border:1px solid #d7e5f5;border-radius:10px;overflow:hidden;">
+            <tr>
+              <td style="background:#06345f;color:#ffffff;padding:22px 28px;">
+                <h1 style="margin:0;font-size:22px;">IRME Telemedicine</h1>
+                <p style="margin:6px 0 0;color:#bfe3ff;">Profile verified by admin</p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:28px;">
+                <p style="margin-top:0;">Hello {{ user.first_name|default:user.email }},</p>
+                <p>Good news — your doctor profile and documents have been reviewed and <strong>verified</strong> by the IRME admin team.</p>
+                <p style="font-size:14px;color:#304f72;">Consultation features (requests, queue, etc.) stay disabled until an admin separately <strong>approves</strong> you for consultations. You will receive another email when that happens.</p>
+                <p style="text-align:center;margin:26px 0;">
+                  <a href="{{ dashboard_url }}" style="background:#1762bf;color:#ffffff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:bold;display:inline-block;">Sign in to dashboard</a>
+                </p>
+                <p style="font-size:13px;color:#4c6480;">Sign-in page: <a href="{{ login_url }}" style="color:#1762bf;">{{ login_url }}</a></p>
+                <p style="font-size:13px;color:#4c6480;">For help, contact {{ support_email }}.</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

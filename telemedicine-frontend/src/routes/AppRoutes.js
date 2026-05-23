@@ -1,36 +1,54 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Home from "../pages/Home";
 import Login from "../pages/users/Login";
-import ProtectedRoute from "../components/ProtectedRoute"; // ✅ Ensure Correct Path
+import ProtectedRoute from "../components/ProtectedRoute";
 
-// ✅ Fix Dashboard Imports
 import PatientDashboard from "../pages/users/dashboards/PatientDashboard";
 import DoctorDashboard from "../pages/users/dashboards/DoctorDashboard";
 import TMCDashboard from "../pages/users/dashboards/TMCDashboard";
+import AdminDashboard from "../pages/users/dashboards/AdminDashboard";
 
-// ✅ Import Registration Pages
 import RegisterPatient from "../pages/users/RegisterPatient";
 import RegisterDoctor from "../pages/users/RegisterDoctor";
 import RegisterTMC from "../pages/users/RegisterTMC";
+import VerifyDoctorEmail from "../pages/users/VerifyDoctorEmail";
 import Logout from "../pages/users/Logout";
+
+import FindCentersPage from "../pages/marketing/FindCentersPage";
+import JoinIRMEPage from "../pages/marketing/JoinIRMEPage";
+import BecomeTMCPage from "../pages/marketing/BecomeTMCPage";
+import JoinDoctorPage from "../pages/marketing/JoinDoctorPage";
+import TelemedicineCoursePage from "../pages/marketing/TelemedicineCoursePage";
+import NotFoundPage from "../pages/NotFoundPage";
 
 const AppRoutes = () => {
   return (
     <Router>
       <Routes>
-        {/* Public Routes */}
         <Route path="/" element={<Home />} />
+        <Route path="/find-centers" element={<FindCentersPage />} />
+        <Route path="/join/doctor" element={<JoinDoctorPage />} />
+        <Route path="/tmc" element={<BecomeTMCPage />} />
+        <Route path="/join-irme" element={<JoinIRMEPage />} />
+        <Route path="/telemedicine-centers/join" element={<BecomeTMCPage />} />
+        <Route path="/doctors/join" element={<JoinDoctorPage />} />
+        <Route path="/telemedicine-course" element={<TelemedicineCoursePage />} />
+
         <Route path="/login" element={<Login />} />
-        
-        {/* ✅ Ensure Registration Pages & logout routes */}
+        <Route path="/verify-email" element={<VerifyDoctorEmail />} />
+        <Route path="/verify-doctor-email" element={<VerifyDoctorEmail />} />
+
         <Route path="/register/patient" element={<RegisterPatient />} />
         <Route path="/register/doctor" element={<RegisterDoctor />} />
         <Route path="/register/tmc" element={<RegisterTMC />} />
         <Route path="/logout" element={<Logout />} />
 
-        {/* ✅ Protected Routes */}
         <Route element={<ProtectedRoute allowedRoles={["patient"]} />}>
           <Route path="/dashboard/patient" element={<PatientDashboard />} />
+          <Route path="/patient/profile" element={<PatientDashboard />} />
+          <Route path="/patient/book" element={<PatientDashboard />} />
+          <Route path="/patient/history" element={<PatientDashboard />} />
+          <Route path="/patient/change-password" element={<PatientDashboard />} />
         </Route>
 
         <Route element={<ProtectedRoute allowedRoles={["doctor"]} />}>
@@ -48,8 +66,16 @@ const AppRoutes = () => {
           <Route path="/dashboard/tmc" element={<TMCDashboard />} />
         </Route>
 
-        {/* 404 Page */}
-        <Route path="*" element={<h1>404 Not Found</h1>} />
+        <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
+          <Route path="/dashboard/admin" element={<AdminDashboard />} />
+          <Route path="/admin/fees" element={<AdminDashboard />} />
+          <Route path="/admin/tmc-wallets" element={<AdminDashboard />} />
+          <Route path="/admin/doctors" element={<AdminDashboard />} />
+          <Route path="/admin/patients" element={<AdminDashboard />} />
+          <Route path="/admin/reports" element={<AdminDashboard />} />
+        </Route>
+
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Router>
   );

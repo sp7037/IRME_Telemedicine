@@ -1,35 +1,72 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Link, useLocation } from "react-router-dom";
+import {
+  DASHBOARD_HEADER_OFFSET_PX,
+  SIDEBAR_WIDTH_COLLAPSED_PX,
+  SIDEBAR_WIDTH_EXPANDED_PX,
+} from "../constants/dashboardLayout";
 
-const Sidebar = ({ role, isCollapsed, onToggle }) => {
+import {
+  BRAND_BLUE_MID,
+  BRAND_NAVY,
+} from "../constants/brandTheme";
+
+const THEME = {
+  bg: `linear-gradient(180deg, ${BRAND_NAVY} 0%, ${BRAND_BLUE_MID} 72%, #0d6e64 100%)`,
+  active: "rgba(31, 118, 216, 0.95)",
+  item: "rgba(255, 255, 255, 0.075)",
+};
+
+const Sidebar = ({ role, isCollapsed: controlledCollapsed, onToggle: controlledToggle }) => {
   const location = useLocation();
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth < 768 : false
+  );
+  const [localCollapsed, setLocalCollapsed] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth < 768 : false
+  );
+
+  const controlled = controlledToggle != null && controlledCollapsed != null;
+  const isCollapsed = controlled ? controlledCollapsed : localCollapsed;
+  const onToggle = useCallback(() => {
+    if (controlled) controlledToggle();
+    else setLocalCollapsed((c) => !c);
+  }, [controlled, controlledToggle]);
 
   useEffect(() => {
     const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
-      if (window.innerWidth >= 768 && isCollapsed) {
-        onToggle(); // Auto-expand on desktop
+      const m = window.innerWidth < 768;
+      setIsMobile(m);
+      if (window.innerWidth >= 768 && isCollapsed && !controlled) {
+        setLocalCollapsed(false);
       }
     };
 
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, [isCollapsed, onToggle]);
+  }, [isCollapsed, controlled]);
 
   const sidebarStyles = {
-    ...styles.sidebar,
-    width: isCollapsed ? (isMobile ? "0" : "70px") : (isMobile ? "280px" : "250px"),
+    ...styles.sidebar(THEME),
+    width: isCollapsed
+      ? isMobile
+        ? "0"
+        : `${SIDEBAR_WIDTH_COLLAPSED_PX}px`
+      : isMobile
+        ? "min(280px, 88vw)"
+        : `${SIDEBAR_WIDTH_EXPANDED_PX}px`,
     transform: isMobile && isCollapsed ? "translateX(-100%)" : "translateX(0)",
   };
 
   return (
     <>
       {/* Overlay for mobile */}
-      {isMobile && !isCollapsed && (
-        <div style={styles.overlay} onClick={onToggle} />
+      {isMobile && !isCollapsed && <div style={styles.overlay} onClick={onToggle} aria-hidden="true" />}
+      {isMobile && isCollapsed && (
+        <button type="button" style={styles.peekTab} onClick={onToggle} aria-label="Open menu">
+          Menu ☰
+        </button>
       )}
-      
       <aside style={sidebarStyles}>
         <div style={styles.header}>
           {!isCollapsed && <h3 style={styles.heading}>📋 Menu</h3>}
@@ -51,8 +88,8 @@ const Sidebar = ({ role, isCollapsed, onToggle }) => {
                 <Link 
                   to="/dashboard/patient" 
                   style={{
-                    ...styles.menuItem,
-                    ...(location.pathname === "/dashboard/patient" ? styles.activeItem : {})
+                    ...styles.menuItem(THEME),
+                    ...(location.pathname === "/dashboard/patient" ? styles.activeItem(THEME) : {}),
                   }}
                   title="Home"
                   className="sidebar-menu-item"
@@ -64,8 +101,8 @@ const Sidebar = ({ role, isCollapsed, onToggle }) => {
                 <Link 
                   to="/patient/profile" 
                   style={{
-                    ...styles.menuItem,
-                    ...(location.pathname === "/patient/profile" ? styles.activeItem : {})
+                    ...styles.menuItem(THEME),
+                    ...(location.pathname === "/patient/profile" ? styles.activeItem(THEME) : {})
                   }}
                   title="View Profile"
                   className="sidebar-menu-item"
@@ -77,8 +114,8 @@ const Sidebar = ({ role, isCollapsed, onToggle }) => {
                 <Link 
                   to="/patient/change-password" 
                   style={{
-                    ...styles.menuItem,
-                    ...(location.pathname === "/patient/change-password" ? styles.activeItem : {})
+                    ...styles.menuItem(THEME),
+                    ...(location.pathname === "/patient/change-password" ? styles.activeItem(THEME) : {})
                   }}
                   title="Change Password"
                   className="sidebar-menu-item"
@@ -90,8 +127,8 @@ const Sidebar = ({ role, isCollapsed, onToggle }) => {
                 <Link 
                   to="/patient/book" 
                   style={{
-                    ...styles.menuItem,
-                    ...(location.pathname === "/patient/book" ? styles.activeItem : {})
+                    ...styles.menuItem(THEME),
+                    ...(location.pathname === "/patient/book" ? styles.activeItem(THEME) : {})
                   }}
                   title="Begin Consultation"
                   className="sidebar-menu-item"
@@ -103,8 +140,8 @@ const Sidebar = ({ role, isCollapsed, onToggle }) => {
                 <Link 
                   to="/patient/history" 
                   style={{
-                    ...styles.menuItem,
-                    ...(location.pathname === "/patient/history" ? styles.activeItem : {})
+                    ...styles.menuItem(THEME),
+                    ...(location.pathname === "/patient/history" ? styles.activeItem(THEME) : {})
                   }}
                   title="Consultation History"
                   className="sidebar-menu-item"
@@ -120,8 +157,8 @@ const Sidebar = ({ role, isCollapsed, onToggle }) => {
                 <Link 
                   to="/dashboard/doctor" 
                   style={{
-                    ...styles.menuItem,
-                    ...(location.pathname === "/dashboard/doctor" ? styles.activeItem : {})
+                    ...styles.menuItem(THEME),
+                    ...(location.pathname === "/dashboard/doctor" ? styles.activeItem(THEME) : {})
                   }}
                   title="Dashboard"
                   className="sidebar-menu-item"
@@ -133,8 +170,8 @@ const Sidebar = ({ role, isCollapsed, onToggle }) => {
                 <Link 
                   to="/doctor/profile" 
                   style={{
-                    ...styles.menuItem,
-                    ...(location.pathname === "/doctor/profile" ? styles.activeItem : {})
+                    ...styles.menuItem(THEME),
+                    ...(location.pathname === "/doctor/profile" ? styles.activeItem(THEME) : {})
                   }}
                   title="Profile"
                   className="sidebar-menu-item"
@@ -146,8 +183,8 @@ const Sidebar = ({ role, isCollapsed, onToggle }) => {
                 <Link 
                   to="/doctor/availability" 
                   style={{
-                    ...styles.menuItem,
-                    ...(location.pathname === "/doctor/availability" ? styles.activeItem : {})
+                    ...styles.menuItem(THEME),
+                    ...(location.pathname === "/doctor/availability" ? styles.activeItem(THEME) : {})
                   }}
                   title="Availability"
                   className="sidebar-menu-item"
@@ -159,8 +196,8 @@ const Sidebar = ({ role, isCollapsed, onToggle }) => {
                 <Link 
                   to="/doctor/schedule" 
                   style={{
-                    ...styles.menuItem,
-                    ...(location.pathname === "/doctor/schedule" ? styles.activeItem : {})
+                    ...styles.menuItem(THEME),
+                    ...(location.pathname === "/doctor/schedule" ? styles.activeItem(THEME) : {})
                   }}
                   title="Schedule"
                   className="sidebar-menu-item"
@@ -172,8 +209,8 @@ const Sidebar = ({ role, isCollapsed, onToggle }) => {
                 <Link 
                   to="/doctor/appointments" 
                   style={{
-                    ...styles.menuItem,
-                    ...(location.pathname === "/doctor/appointments" ? styles.activeItem : {})
+                    ...styles.menuItem(THEME),
+                    ...(location.pathname === "/doctor/appointments" ? styles.activeItem(THEME) : {})
                   }}
                   title="Appointments"
                   className="sidebar-menu-item"
@@ -185,8 +222,8 @@ const Sidebar = ({ role, isCollapsed, onToggle }) => {
                 <Link 
                   to="/doctor/queue" 
                   style={{
-                    ...styles.menuItem,
-                    ...(location.pathname === "/doctor/queue" ? styles.activeItem : {})
+                    ...styles.menuItem(THEME),
+                    ...(location.pathname === "/doctor/queue" ? styles.activeItem(THEME) : {})
                   }}
                   title="Queue"
                   className="sidebar-menu-item"
@@ -198,8 +235,8 @@ const Sidebar = ({ role, isCollapsed, onToggle }) => {
                 <Link 
                   to="/doctor/earnings" 
                   style={{
-                    ...styles.menuItem,
-                    ...(location.pathname === "/doctor/earnings" ? styles.activeItem : {})
+                    ...styles.menuItem(THEME),
+                    ...(location.pathname === "/doctor/earnings" ? styles.activeItem(THEME) : {})
                   }}
                   title="Earnings"
                   className="sidebar-menu-item"
@@ -211,8 +248,8 @@ const Sidebar = ({ role, isCollapsed, onToggle }) => {
                 <Link 
                   to="/doctor/history" 
                   style={{
-                    ...styles.menuItem,
-                    ...(location.pathname === "/doctor/history" ? styles.activeItem : {})
+                    ...styles.menuItem(THEME),
+                    ...(location.pathname === "/doctor/history" ? styles.activeItem(THEME) : {})
                   }}
                   title="Consultations History"
                   className="sidebar-menu-item"
@@ -228,8 +265,8 @@ const Sidebar = ({ role, isCollapsed, onToggle }) => {
                 <Link 
                   to="/dashboard/tmc" 
                   style={{
-                    ...styles.menuItem,
-                    ...(location.pathname === "/dashboard/tmc" ? styles.activeItem : {})
+                    ...styles.menuItem(THEME),
+                    ...(location.pathname === "/dashboard/tmc" ? styles.activeItem(THEME) : {})
                   }}
                   title="TMC Dashboard"
                   className="sidebar-menu-item"
@@ -239,6 +276,32 @@ const Sidebar = ({ role, isCollapsed, onToggle }) => {
               </li>
             </>
           )}
+          {role === "admin" && (
+            <>
+              {[
+                ["/dashboard/admin", "Operations"],
+                ["/admin/fees", "Fees"],
+                ["/admin/tmc-wallets", "TMC Wallets"],
+                ["/admin/doctors", "Doctors"],
+                ["/admin/patients", "Patients"],
+                ["/admin/reports", "Reports"],
+              ].map(([to, label]) => (
+                <li key={to}>
+                  <Link
+                    to={to}
+                    style={{
+                      ...styles.menuItem(THEME),
+                      ...(location.pathname === to ? styles.activeItem(THEME) : {}),
+                    }}
+                    title={label}
+                    className="sidebar-menu-item"
+                  >
+                    {isCollapsed ? "•" : label}
+                  </Link>
+                </li>
+              ))}
+            </>
+          )}
         </ul>
       </aside>
     </>
@@ -246,27 +309,44 @@ const Sidebar = ({ role, isCollapsed, onToggle }) => {
 };
 
 const styles = {
-  sidebar: {
-    background: "linear-gradient(180deg, #2c3e50 0%, #34495e 100%)",
-    padding: "20px 15px",
+  sidebar: (T) => ({
+    background: T.bg,
+    padding: "18px 12px",
     position: "fixed",
-    top: "60px",
+    top: DASHBOARD_HEADER_OFFSET_PX,
     left: 0,
-    height: "calc(100vh - 60px)",
+    height: `calc(100vh - ${DASHBOARD_HEADER_OFFSET_PX}px)`,
     overflowY: "auto",
-    boxShadow: "2px 0 10px rgba(0,0,0,0.2)",
-    transition: "all 0.3s ease-in-out",
+    boxShadow: "8px 0 28px rgba(0, 32, 67, 0.18)",
+    transition: "width 0.25s ease, transform 0.25s ease",
     zIndex: 1000,
     overflowX: "hidden",
-  },
+    boxSizing: "border-box",
+  }),
   overlay: {
     position: "fixed",
-    top: "60px",
+    top: DASHBOARD_HEADER_OFFSET_PX,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: "rgba(0, 0, 0, 0.45)",
     zIndex: 999,
+  },
+  peekTab: {
+    position: "fixed",
+    left: 0,
+    top: "50%",
+    transform: "translateY(-50%)",
+    zIndex: 1001,
+    background: "#123a6f",
+    color: "#fff",
+    border: "none",
+    borderRadius: "0 10px 10px 0",
+    padding: "12px 8px 12px 4px",
+    fontSize: 12,
+    fontWeight: 700,
+    cursor: "pointer",
+    boxShadow: "2px 2px 8px rgba(0,0,0,0.2)",
   },
   header: {
     display: "flex",
@@ -274,7 +354,7 @@ const styles = {
     alignItems: "center",
     marginBottom: "20px",
     paddingBottom: "15px",
-    borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+    borderBottom: "1px solid rgba(255, 255, 255, 0.14)",
   },
   heading: {
     fontSize: "18px",
@@ -288,7 +368,7 @@ const styles = {
     color: "#fff",
     fontSize: "20px",
     padding: "8px 12px",
-    borderRadius: "5px",
+    borderRadius: "10px",
     cursor: "pointer",
     transition: "all 0.2s ease",
   },
@@ -300,25 +380,27 @@ const styles = {
     padding: 0,
     margin: 0,
   },
-  menuItem: {
+  menuItem: (T) => ({
     display: "flex",
     alignItems: "center",
-    padding: "12px 15px",
-    color: "#ecf0f1",
+    padding: "11px 12px",
+    color: "#e8f2ff",
     textDecoration: "none",
-    borderRadius: "8px",
-    marginBottom: "8px",
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
-    transition: "all 0.2s ease",
+    borderRadius: "10px",
+    marginBottom: "6px",
+    backgroundColor: T.item,
+    transition: "background 0.2s ease, transform 0.2s ease",
     whiteSpace: "nowrap",
-    fontSize: "14px",
+    fontSize: "13px",
+    fontWeight: 650,
     cursor: "pointer",
-  },
-  activeItem: {
-    backgroundColor: "#3498db",
+  }),
+  activeItem: (T) => ({
+    backgroundColor: T.active,
     color: "#fff",
-    fontWeight: "bold",
-  },
+    fontWeight: 700,
+    boxShadow: "0 10px 22px rgba(23, 98, 191, 0.24)",
+  }),
 };
 
 // Add hover effect via CSS-in-JS (applied dynamically)

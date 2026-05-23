@@ -1,0 +1,15 @@
+Hello {{ user.first_name|default:user.email }},
+
+Your IRME Telemedicine doctor profile is complete — thank you for submitting your professional details and documents.
+
+The admin team will review your account. After approval, you can manage consultations from your dashboard.
+
+Open your dashboard (sign in if prompted):
+{{ dashboard_url }}
+
+Sign in:
+{{ login_url }}
+
+For help, contact {{ support_email }}.
+
+IRME Telemedicine

@@ -21,19 +21,30 @@ const ConsultationTimeline = ({ events }) => {
   }
   return (
     <div style={{ display: "grid", gap: 10 }}>
-      {events.map((event) => (
-        <div key={event.id} style={styles.row}>
-          <div style={styles.icon}>{ICONS[event.event_type] || "•"}</div>
-          <div>
-            <div style={styles.title}>{event.event_type.replaceAll("_", " ")}</div>
-            <div style={styles.meta}>
-              {new Date(event.created_at).toLocaleString()}
-              {event.actor_email ? ` · ${event.actor_email}` : ""}
+      {events.map((event) => {
+        const title = event.display_label || event.event_type?.replaceAll("_", " ") || "Event";
+        const meta = event.display_time || (event.created_at ? new Date(event.created_at).toLocaleString() : "");
+        const actor = event.actor_display || event.actor_email || "";
+        const summary = event.summary || "";
+        const rowStyle = {
+          ...styles.row,
+          ...(event.highlight ? styles.rowHighlight : {}),
+        };
+        return (
+          <div key={event.id} style={rowStyle}>
+            <div style={styles.icon}>{ICONS[event.event_type] || "•"}</div>
+            <div>
+              <div style={styles.title}>{title}</div>
+              <div style={styles.meta}>
+                {meta}
+                {actor ? ` · ${actor}` : ""}
+              </div>
+              {summary ? <div style={styles.summary}>{summary}</div> : null}
+              {event.note ? <div style={styles.note}>{event.note}</div> : null}
             </div>
-            {event.note ? <div style={styles.note}>{event.note}</div> : null}
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 };
@@ -48,6 +59,10 @@ const styles = {
     borderRadius: 10,
     padding: 10,
   },
+  rowHighlight: {
+    borderColor: "#8ab0dc",
+    background: "#f0f6fd",
+  },
   icon: {
     width: 28,
     height: 28,
@@ -59,6 +74,7 @@ const styles = {
   },
   title: { fontWeight: 700, color: "#113864", fontSize: 13 },
   meta: { color: "#4c6480", fontSize: 12, marginTop: 2 },
+  summary: { color: "#244a75", fontSize: 13, marginTop: 6, lineHeight: 1.35 },
   note: { color: "#244a75", fontSize: 13, marginTop: 4 },
 };
 

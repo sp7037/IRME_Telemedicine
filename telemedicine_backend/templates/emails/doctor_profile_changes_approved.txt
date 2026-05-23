@@ -1,0 +1,22 @@
+Hello {{ user.first_name|default:user.email }},
+
+Good news — an administrator has approved your recent doctor profile change request. Your updated profile is now active on IRME Telemedicine.
+
+These updates were applied:
+{% for line in summary_parts %}
+- {{ line }}
+{% empty %}
+- (See your profile for details.)
+{% endfor %}
+
+Note: consultation access may need a separate admin approval if your account was pending re-approval after this change.
+
+Open your profile:
+{{ profile_url }}
+
+Dashboard:
+{{ dashboard_url }}
+
+For help, contact {{ support_email }}.
+
+IRME Telemedicine

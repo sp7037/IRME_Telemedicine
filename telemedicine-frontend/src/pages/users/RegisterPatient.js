@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import HomeHeader from "../../components/HomeHeader";
-import HomeFooter from "../../components/HomeFooter";
+import { Link, useNavigate } from "react-router-dom";
+import PublicLayout from "../../components/site/PublicLayout";
 import { registerUser } from "../../api/users";
+import { registrationLayout as L } from "../../constants/registrationLayout";
 
 const RegisterPatient = () => {
   const navigate = useNavigate();
@@ -21,18 +21,16 @@ const RegisterPatient = () => {
   const [errors, setErrors] = useState({});
   const [success, setSuccess] = useState("");
 
-  // ✅ Handle Input Change
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
-    setErrors({ ...errors, [e.target.name]: "" }); // Clear error when user types
+    setErrors({ ...errors, [e.target.name]: "" });
   };
 
-  // ✅ Form Submit Handler
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (formData.password !== formData.confirmPassword) {
-      setErrors({ ...errors, confirmPassword: "Passwords do not match!" });
+      setErrors({ ...errors, confirmPassword: "Passwords do not match." });
       return;
     }
 
@@ -49,10 +47,17 @@ const RegisterPatient = () => {
     };
 
     try {
-      await registerUser(userData);
-      setSuccess("✅ Registration successful! Redirecting to login...");
+      const data = await registerUser(userData);
+      setSuccess("Account created. Check your email for the verification OTP.");
       setErrors({});
-      setTimeout(() => navigate("/login"), 2000);
+      if (data?.next_step === "VERIFY_EMAIL" && data?.email) {
+        setTimeout(
+          () => navigate(`/verify-email?email=${encodeURIComponent(data.email)}`),
+          1200
+        );
+      } else {
+        setTimeout(() => navigate("/login"), 2000);
+      }
     } catch (error) {
       setSuccess("");
       if (error.fieldErrors) {
@@ -64,109 +69,218 @@ const RegisterPatient = () => {
   };
 
   return (
-    <>
-      <HomeHeader />
-      <div style={styles.container}>
-        <h2>🩺 Register as Patient</h2>
-        {success && <p style={styles.success}>{success}</p>}
-        {errors.general && <p style={styles.error}>{errors.general}</p>}
+    <PublicLayout>
+      <main style={L.main}>
+        <section style={L.heroStrip}>
+          <h1 style={L.heroTitle}>Register as Patient</h1>
+          <p style={L.heroSubtitle}>
+            Create your account for direct online consultations. Your details
+            are used only to coordinate care and verify your profile.
+          </p>
+        </section>
 
-        {/* ✅ Form Container with Border & Shadow */}
-        <div style={styles.formContainer}>
-          <form onSubmit={handleSubmit} style={styles.form}>
-            <div style={styles.row}>
-              <input type="text" name="first_name" placeholder="First Name" required onChange={handleChange} value={formData.first_name} style={styles.input} />
-              <input type="text" name="last_name" placeholder="Last Name" required onChange={handleChange} value={formData.last_name} style={styles.input} />
+        <div style={L.card}>
+          {success && <div style={L.bannerSuccess}>{success}</div>}
+          {errors.general && <div style={L.bannerError}>{errors.general}</div>}
+
+          <form onSubmit={handleSubmit} style={L.form}>
+            <div style={L.row}>
+              <div style={L.field}>
+                <label style={L.label} htmlFor="patient-first_name">
+                  First name
+                </label>
+                <input
+                  id="patient-first_name"
+                  className="auth-input"
+                  type="text"
+                  name="first_name"
+                  autoComplete="given-name"
+                  required
+                  onChange={handleChange}
+                  value={formData.first_name}
+                  placeholder="e.g. Priya"
+                />
+                {errors.first_name && (
+                  <p style={L.fieldError}>{errors.first_name}</p>
+                )}
+              </div>
+              <div style={L.field}>
+                <label style={L.label} htmlFor="patient-last_name">
+                  Last name
+                </label>
+                <input
+                  id="patient-last_name"
+                  className="auth-input"
+                  type="text"
+                  name="last_name"
+                  autoComplete="family-name"
+                  required
+                  onChange={handleChange}
+                  value={formData.last_name}
+                  placeholder="e.g. Sharma"
+                />
+              </div>
             </div>
-            {errors.first_name && <p style={styles.error}>{errors.first_name}</p>}
 
-            <input type="email" name="email" placeholder="Email" required onChange={handleChange} value={formData.email} style={styles.input} />
-            {errors.email && <p style={styles.error}>{errors.email}</p>}
-
-            <input type="text" name="phone_number" placeholder="Phone Number" required onChange={handleChange} value={formData.phone_number} style={styles.input} />
-            {errors.phone_number && <p style={styles.error}>{errors.phone_number}</p>}
-
-            <input type="password" name="password" placeholder="Password" required onChange={handleChange} value={formData.password} style={styles.input} />
-            <input type="password" name="confirmPassword" placeholder="Confirm Password" required onChange={handleChange} value={formData.confirmPassword} style={styles.input} />
-            {errors.confirmPassword && <p style={styles.error}>{errors.confirmPassword}</p>}
-
-            <div style={styles.row}>
-              <select name="gender" required onChange={handleChange} value={formData.gender} style={styles.select}>
-                <option value="">Select Gender</option>
-                <option value="M">Male</option>
-                <option value="F">Female</option>
-                <option value="O">Other</option>
-              </select>
-
-              <input type="number" name="age" placeholder="Age" required onChange={handleChange} value={formData.age} style={styles.input} />
+            <div style={L.field}>
+              <label style={L.label} htmlFor="patient-email">
+                Email
+              </label>
+              <input
+                id="patient-email"
+                className="auth-input"
+                type="email"
+                name="email"
+                autoComplete="email"
+                required
+                onChange={handleChange}
+                value={formData.email}
+                placeholder="name@example.com"
+              />
+              {errors.email && <p style={L.fieldError}>{errors.email}</p>}
             </div>
-            {errors.age && <p style={styles.error}>{errors.age}</p>}
 
-            <input type="text" name="address" placeholder="Address" required onChange={handleChange} value={formData.address} style={styles.input} />
-            {errors.address && <p style={styles.error}>{errors.address}</p>}
+            <div style={L.field}>
+              <label style={L.label} htmlFor="patient-phone">
+                Phone number
+              </label>
+              <input
+                id="patient-phone"
+                className="auth-input"
+                type="tel"
+                name="phone_number"
+                autoComplete="tel"
+                required
+                onChange={handleChange}
+                value={formData.phone_number}
+                placeholder="10-digit mobile"
+              />
+              {errors.phone_number && (
+                <p style={L.fieldError}>{errors.phone_number}</p>
+              )}
+            </div>
 
-            <button type="submit" style={styles.button}>Register</button>
+            <div style={L.row}>
+              <div style={L.field}>
+                <label style={L.label} htmlFor="patient-password">
+                  Password
+                </label>
+                <input
+                  id="patient-password"
+                  className="auth-input"
+                  type="password"
+                  name="password"
+                  autoComplete="new-password"
+                  required
+                  onChange={handleChange}
+                  value={formData.password}
+                  placeholder="Create a strong password"
+                />
+              </div>
+              <div style={L.field}>
+                <label style={L.label} htmlFor="patient-confirm">
+                  Confirm password
+                </label>
+                <input
+                  id="patient-confirm"
+                  className="auth-input"
+                  type="password"
+                  name="confirmPassword"
+                  autoComplete="new-password"
+                  required
+                  onChange={handleChange}
+                  value={formData.confirmPassword}
+                  placeholder="Re-enter password"
+                />
+              </div>
+            </div>
+            {errors.confirmPassword && (
+              <p style={L.fieldError}>{errors.confirmPassword}</p>
+            )}
+
+            <div style={L.row}>
+              <div style={L.field}>
+                <label style={L.label} htmlFor="patient-gender">
+                  Gender
+                </label>
+                <select
+                  id="patient-gender"
+                  className="auth-select"
+                  name="gender"
+                  required
+                  onChange={handleChange}
+                  value={formData.gender}
+                >
+                  <option value="">Select gender</option>
+                  <option value="M">Male</option>
+                  <option value="F">Female</option>
+                  <option value="O">Other</option>
+                </select>
+              </div>
+              <div style={L.field}>
+                <label style={L.label} htmlFor="patient-age">
+                  Age
+                </label>
+                <input
+                  id="patient-age"
+                  className="auth-input"
+                  type="number"
+                  name="age"
+                  min="1"
+                  max="120"
+                  required
+                  onChange={handleChange}
+                  value={formData.age}
+                  placeholder="Years"
+                />
+                {errors.age && <p style={L.fieldError}>{errors.age}</p>}
+              </div>
+            </div>
+
+            <div style={L.field}>
+              <label style={L.label} htmlFor="patient-address">
+                Address
+              </label>
+              <input
+                id="patient-address"
+                className="auth-input"
+                type="text"
+                name="address"
+                autoComplete="street-address"
+                required
+                onChange={handleChange}
+                value={formData.address}
+                placeholder="Village / town, district, state"
+              />
+              {errors.address && <p style={L.fieldError}>{errors.address}</p>}
+            </div>
+
+            <button type="submit" style={L.submitButton}>
+              Create patient account
+            </button>
           </form>
-        </div>
-      </div>
-      <HomeFooter />
-    </>
-  );
-};
 
-const styles = {
-  container: {
-    maxWidth: "600px",
-    margin: "50px auto",
-    textAlign: "center",
-  },
-  formContainer: {
-    backgroundColor: "#fff",
-    padding: "20px",
-    borderRadius: "8px",
-    boxShadow: "0px 5px 10px rgba(0, 0, 0, 0.2)",
-    border: "1px solid #ccc",
-  },
-  row: {
-    display: "flex",
-    justifyContent: "space-between",
-    gap: "10px",
-  },
-  input: {
-    width: "100%",
-    padding: "10px",
-    borderRadius: "5px",
-    border: "1px solid #ccc",
-    fontSize: "16px",
-  },
-  select: {
-    width: "48%",
-    padding: "10px",
-    borderRadius: "5px",
-    border: "1px solid #ccc",
-    fontSize: "16px",
-  },
-  button: {
-    width: "100%",
-    padding: "12px",
-    backgroundColor: "#007bff",
-    color: "#fff",
-    fontSize: "16px",
-    border: "none",
-    borderRadius: "6px",
-    cursor: "pointer",
-    marginTop: "10px",
-  },
-  error: {
-    color: "red",
-    fontSize: "14px",
-    marginTop: "5px",
-  },
-  success: {
-    color: "green",
-    fontSize: "14px",
-    marginTop: "10px",
-  },
+          <div style={L.footerNote}>
+            Are you a care provider?{" "}
+            <Link to="/register/doctor" style={L.inlineLink}>
+              Register as doctor
+            </Link>
+            {" · "}
+            <Link to="/register/tmc" style={L.inlineLink}>
+              Register center
+            </Link>
+            <br />
+            <span style={{ marginTop: "10px", display: "inline-block" }}>
+              Already registered?{" "}
+              <Link to="/login" style={L.inlineLink}>
+                Sign in
+              </Link>
+            </span>
+          </div>
+        </div>
+      </main>
+    </PublicLayout>
+  );
 };
 
 export default RegisterPatient;

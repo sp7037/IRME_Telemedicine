@@ -1,17 +1,16 @@
 import React from "react";
+import { BRAND_NAVY, BRAND_NAVY_DEEP } from "../constants/brandTheme";
 
 const Footer = () => {
   return (
     <footer style={styles.footer}>
-      <div style={styles.footerContent}>
-        <p style={styles.copyright}>&copy; 2025 Telemedicine Platform. All rights reserved.</p>
+      <div style={styles.inner}>
+        <p style={styles.copy}>&copy; {new Date().getFullYear()} IRME Telemedicine. All rights reserved.</p>
         <p style={styles.support}>
-          Support: <a 
-            href="mailto:support@irme.in" 
-            style={styles.emailLink}
-            onMouseEnter={(e) => e.target.style.color = "#f0f0f0"}
-            onMouseLeave={(e) => e.target.style.color = "white"}
-          >support@irme.in</a>
+          Support:{" "}
+          <a href="mailto:support@irme.in" style={styles.a}>
+            support@irme.in
+          </a>
         </p>
       </div>
     </footer>
@@ -20,37 +19,28 @@ const Footer = () => {
 
 const styles = {
   footer: {
-    background: "#007bff",
-    color: "white",
-    textAlign: "center",
-    padding: "5px 10px",
-    position: "fixed",
-    bottom: 0,
-    width: "100%",
-    zIndex: 1000,
-    boxShadow: "0 -2px 5px rgba(0,0,0,0.1)",
+    marginTop: "auto",
+    background: `linear-gradient(180deg, ${BRAND_NAVY} 0%, ${BRAND_NAVY_DEEP} 100%)`,
+    color: "#cfe4ff",
+    borderTop: "1px solid rgba(158, 201, 255, 0.2)",
   },
-  footerContent: {
+  inner: {
+    maxWidth: 1200,
+    margin: "0 auto",
+    padding: "16px 20px",
     display: "flex",
+    flexWrap: "wrap",
     justifyContent: "center",
     alignItems: "center",
-    gap: "20px",
-    flexWrap: "wrap",
-    fontSize: "12px",
+    gap: "12px 24px",
+    textAlign: "center",
+    fontSize: "clamp(12px, 2vw, 13px)",
   },
-  copyright: {
-    margin: 0,
-    padding: 0,
-  },
-  support: {
-    margin: 0,
-    padding: 0,
-  },
-  emailLink: {
-    color: "white",
-    textDecoration: "underline",
-    fontWeight: "500",
-    transition: "color 0.2s",
+  copy: { margin: 0 },
+  support: { margin: 0 },
+  a: {
+    color: "#9ec9ff",
+    fontWeight: 600,
   },
 };
 

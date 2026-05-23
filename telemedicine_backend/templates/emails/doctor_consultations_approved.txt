@@ -1,0 +1,13 @@
+Hello {{ user.first_name|default:user.email }},
+
+Great news — your IRME Telemedicine doctor account has been approved to take consultation requests. You can sign in, set your availability, and manage consultations from your dashboard.
+
+Open your dashboard (sign in if prompted):
+{{ dashboard_url }}
+
+Sign in:
+{{ login_url }}
+
+For help, contact {{ support_email }}.
+
+IRME Telemedicine

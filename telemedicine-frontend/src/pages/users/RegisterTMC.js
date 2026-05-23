@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import HomeHeader from "../../components/HomeHeader";
-import HomeFooter from "../../components/HomeFooter";
+import { Link, useNavigate } from "react-router-dom";
+import PublicLayout from "../../components/site/PublicLayout";
 import { registerUser } from "../../api/users";
+import { registrationLayout as L } from "../../constants/registrationLayout";
 
 const RegisterTMC = () => {
   const navigate = useNavigate();
@@ -27,7 +27,7 @@ const RegisterTMC = () => {
     e.preventDefault();
 
     if (formData.password !== formData.confirmPassword) {
-      setErrors({ ...errors, confirmPassword: "Passwords do not match!" });
+      setErrors({ ...errors, confirmPassword: "Passwords do not match." });
       return;
     }
 
@@ -41,10 +41,17 @@ const RegisterTMC = () => {
     };
 
     try {
-      await registerUser(payload);
-      setSuccess("✅ Telemedicine center registered successfully! Redirecting to login...");
+      const data = await registerUser(payload);
+      setSuccess("Center account created. Check your email for the verification OTP.");
       setErrors({});
-      setTimeout(() => navigate("/login"), 2000);
+      if (data?.next_step === "VERIFY_EMAIL" && data?.email) {
+        setTimeout(
+          () => navigate(`/verify-email?email=${encodeURIComponent(data.email)}`),
+          1200
+        );
+      } else {
+        setTimeout(() => navigate("/login"), 2000);
+      }
     } catch (error) {
       setSuccess("");
       if (error.fieldErrors) {
@@ -56,85 +63,157 @@ const RegisterTMC = () => {
   };
 
   return (
-    <>
-      <HomeHeader />
-      <div style={styles.container}>
-        <h2>🏥 Register a Telemedicine Center</h2>
-        {success && <p style={styles.success}>{success}</p>}
-        {errors.general && <p style={styles.error}>{errors.general}</p>}
+    <PublicLayout>
+      <main style={L.main}>
+        <section style={L.heroStrip}>
+          <h1 style={L.heroTitle}>Register a Telemedicine Center</h1>
+          <p style={L.heroSubtitle}>
+            Onboard your center as a coordinator account. Use a trusted contact
+            person&apos;s name and work email; center details can be completed
+            after you sign in.
+          </p>
+        </section>
 
-        <div style={styles.formContainer}>
-          <form onSubmit={handleSubmit} style={styles.form}>
-            <div style={styles.row}>
-              <input name="first_name" placeholder="First Name" value={formData.first_name} onChange={handleChange} required style={styles.input} />
-              <input name="last_name" placeholder="Last Name" value={formData.last_name} onChange={handleChange} required style={styles.input} />
+        <div style={L.card}>
+          {success && <div style={L.bannerSuccess}>{success}</div>}
+          {errors.general && <div style={L.bannerError}>{errors.general}</div>}
+
+          <form onSubmit={handleSubmit} style={L.form}>
+            <div style={L.row}>
+              <div style={L.field}>
+                <label style={L.label} htmlFor="tmc-first_name">
+                  Coordinator first name
+                </label>
+                <input
+                  id="tmc-first_name"
+                  className="auth-input"
+                  name="first_name"
+                  autoComplete="given-name"
+                  required
+                  value={formData.first_name}
+                  onChange={handleChange}
+                  placeholder="e.g. Neha"
+                />
+              </div>
+              <div style={L.field}>
+                <label style={L.label} htmlFor="tmc-last_name">
+                  Coordinator last name
+                </label>
+                <input
+                  id="tmc-last_name"
+                  className="auth-input"
+                  name="last_name"
+                  autoComplete="family-name"
+                  required
+                  value={formData.last_name}
+                  onChange={handleChange}
+                  placeholder="e.g. Kulkarni"
+                />
+              </div>
             </div>
-            <input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleChange} required style={styles.input} />
-            {errors.email && <p style={styles.error}>{errors.email}</p>}
-            <input name="phone_number" placeholder="Phone Number" value={formData.phone_number} onChange={handleChange} required style={styles.input} />
-            {errors.phone_number && <p style={styles.error}>{errors.phone_number}</p>}
 
-            <div style={styles.row}>
-              <input type="password" name="password" placeholder="Password" value={formData.password} onChange={handleChange} required style={styles.input} />
-              <input type="password" name="confirmPassword" placeholder="Confirm Password" value={formData.confirmPassword} onChange={handleChange} required style={styles.input} />
+            <div style={L.field}>
+              <label style={L.label} htmlFor="tmc-email">
+                Work email
+              </label>
+              <input
+                id="tmc-email"
+                className="auth-input"
+                type="email"
+                name="email"
+                autoComplete="email"
+                required
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="center@organization.org"
+              />
+              {errors.email && <p style={L.fieldError}>{errors.email}</p>}
             </div>
-            {errors.confirmPassword && <p style={styles.error}>{errors.confirmPassword}</p>}
 
-            <button type="submit" style={styles.button}>Register TMC</button>
+            <div style={L.field}>
+              <label style={L.label} htmlFor="tmc-phone">
+                Phone number
+              </label>
+              <input
+                id="tmc-phone"
+                className="auth-input"
+                type="tel"
+                name="phone_number"
+                autoComplete="tel"
+                required
+                value={formData.phone_number}
+                onChange={handleChange}
+                placeholder="Desk or coordinator mobile"
+              />
+              {errors.phone_number && (
+                <p style={L.fieldError}>{errors.phone_number}</p>
+              )}
+            </div>
+
+            <div style={L.row}>
+              <div style={L.field}>
+                <label style={L.label} htmlFor="tmc-password">
+                  Password
+                </label>
+                <input
+                  id="tmc-password"
+                  className="auth-input"
+                  type="password"
+                  name="password"
+                  autoComplete="new-password"
+                  required
+                  value={formData.password}
+                  onChange={handleChange}
+                  placeholder="Create password"
+                />
+              </div>
+              <div style={L.field}>
+                <label style={L.label} htmlFor="tmc-confirm">
+                  Confirm password
+                </label>
+                <input
+                  id="tmc-confirm"
+                  className="auth-input"
+                  type="password"
+                  name="confirmPassword"
+                  autoComplete="new-password"
+                  required
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  placeholder="Confirm password"
+                />
+              </div>
+            </div>
+            {errors.confirmPassword && (
+              <p style={L.fieldError}>{errors.confirmPassword}</p>
+            )}
+
+            <button type="submit" style={L.submitButton}>
+              Create center account
+            </button>
           </form>
-        </div>
-      </div>
-      <HomeFooter />
-    </>
-  );
-};
 
-const styles = {
-  container: {
-    maxWidth: "700px",
-    margin: "50px auto",
-    textAlign: "center",
-  },
-  formContainer: {
-    backgroundColor: "#fff",
-    padding: "25px",
-    borderRadius: "8px",
-    boxShadow: "0 5px 10px rgba(0,0,0,0.15)",
-  },
-  form: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "12px",
-  },
-  row: {
-    display: "flex",
-    gap: "12px",
-  },
-  input: {
-    width: "100%",
-    padding: "12px",
-    borderRadius: "6px",
-    border: "1px solid #ccc",
-    fontSize: "15px",
-  },
-  button: {
-    padding: "12px",
-    backgroundColor: "#0d6efd",
-    color: "#fff",
-    border: "none",
-    borderRadius: "6px",
-    fontSize: "16px",
-    cursor: "pointer",
-    marginTop: "10px",
-  },
-  error: {
-    color: "red",
-    fontSize: "14px",
-  },
-  success: {
-    color: "green",
-    fontSize: "14px",
-  },
+          <div style={L.footerNote}>
+            Individual patient?{" "}
+            <Link to="/register/patient" style={L.inlineLink}>
+              Register as patient
+            </Link>
+            {" · "}
+            <Link to="/register/doctor" style={L.inlineLink}>
+              Doctor registration
+            </Link>
+            <br />
+            <span style={{ marginTop: "10px", display: "inline-block" }}>
+              Already registered?{" "}
+              <Link to="/login" style={L.inlineLink}>
+                Sign in
+              </Link>
+            </span>
+          </div>
+        </div>
+      </main>
+    </PublicLayout>
+  );
 };
 
 export default RegisterTMC;

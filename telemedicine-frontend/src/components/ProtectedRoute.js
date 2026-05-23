@@ -1,16 +1,33 @@
 import React from "react";
-import { Navigate, Outlet } from "react-router-dom";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
+import {
+  clearAuthSession,
+  getAccessToken,
+  getDoctorOnboarding,
+  getUserType,
+  isJwtExpired,
+} from "../utils/authSession";
 
 const ProtectedRoute = ({ allowedRoles }) => {
-  const token = localStorage.getItem("token");
-  const userType = localStorage.getItem("userType");
+  const token = getAccessToken();
+  const userType = getUserType();
+  const location = useLocation();
+  const loginWithReturn = `/login?next=${encodeURIComponent(`${location.pathname}${location.search || ""}`)}`;
 
-  if (!token) {
-    return <Navigate to="/login" replace />;
+  if (!token || isJwtExpired(token)) {
+    clearAuthSession();
+    return <Navigate to={loginWithReturn} replace />;
   }
 
   if (!allowedRoles.includes(userType)) {
-    return <Navigate to="/unauthorized" replace />;
+    return <Navigate to={loginWithReturn} replace />;
+  }
+
+  if (userType === "doctor") {
+    const onboarding = getDoctorOnboarding();
+    if (onboarding.next_step === "COMPLETE_PROFILE" && location.pathname !== "/doctor/profile") {
+      return <Navigate to="/doctor/profile" replace />;
+    }
   }
 
   return <Outlet />;
