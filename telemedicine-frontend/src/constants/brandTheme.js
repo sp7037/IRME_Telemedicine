@@ -24,7 +24,7 @@ export const MARKETING_HERO_GRADIENT =
   "linear-gradient(135deg, #062B4F 0%, #0F4C81 52%, #0d6e64 100%)";
 
 export const DASHBOARD_PAGE_BG =
-  "linear-gradient(180deg, #eef5fb 0%, #f8fbfe 45%, #eef4f8 100%)";
-export const DASHBOARD_SECTION_BG = "rgba(255, 255, 255, 0.94)";
-export const DASHBOARD_SHADOW = "0 14px 34px rgba(0, 32, 67, 0.08)";
-export const DASHBOARD_BORDER = "1px solid #e0ebf6";
+  "linear-gradient(180deg, #f0f4f8 0%, #f8fafb 45%, #f0f4f8 100%)";
+export const DASHBOARD_SECTION_BG = "#ffffff";
+export const DASHBOARD_SHADOW = "0 4px 6px -1px rgba(0, 32, 67, 0.08), 0 2px 4px -1px rgba(0, 32, 67, 0.04)";
+export const DASHBOARD_BORDER = "1px solid #e7ecf1";
