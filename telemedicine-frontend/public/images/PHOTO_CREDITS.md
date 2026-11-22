@@ -1,10 +1,33 @@
 # Photo Credits
 
-All images are from Unsplash and are free to use under the Unsplash License.
+## Official IRME Images
 
-## Images Used
+The following images are owned by IRME Institute and do not require external attribution:
 
-### 1. hero-telemedicine.jpg
+### 1. hero-tmc-desktop.webp / hero-tmc-desktop.jpg
+- **Description**: IRME Telemedicine Center - health worker assisting rural patient with video consultation
+- **Source**: IRME Institute (official brand asset)
+- **Usage**: Main home page hero image
+- **Sizes**: Desktop (1600px) and Mobile (800px) versions
+- **Format**: WebP with JPG fallback
+
+### 2. irme-horizontal-logo.png
+- **Description**: Official IRME horizontal logo (phone icon | IRME Telemedicine)
+- **Source**: IRME Institute (official brand asset)
+- **Usage**: Header navigation and footer
+- **Size**: 67KB
+
+### 3. irme-logo-square.png
+- **Description**: Official IRME square/stacked logo
+- **Source**: IRME Institute (official brand asset)
+- **Usage**: Favicon, app icons, login page, social share images
+- **Size**: 353KB
+
+## Third-Party Images (Unsplash)
+
+The following images are from Unsplash and are free to use under the Unsplash License:
+
+### 4. hero-telemedicine.jpg (archived)
 - **Description**: Doctor providing remote consultation
 - **Source**: Unsplash
 - **URL**: https://unsplash.com/photos/woman-in-white-long-sleeve-shirt-using-silver-laptop-computer-FV_PxCqgtwc
