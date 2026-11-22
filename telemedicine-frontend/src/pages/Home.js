@@ -4,6 +4,7 @@ import PublicLayout from "../components/site/PublicLayout";
 import Seo from "../components/Seo";
 import { whatsappUrl } from "../constants/marketingContact";
 import { SITE_CTA_GREEN, SITE_HEADER_NAVY, SITE_DEEP_BLUE } from "../constants/brandTheme";
+import "./HomeResponsive.css";
 
 const Home = () => {
   return (
@@ -16,7 +17,7 @@ const Home = () => {
       />
       <main style={styles.main}>
         {/* Hero Section */}
-        <section style={styles.hero}>
+        <section className="home-hero">
           <div style={styles.heroContent}>
             <h1 style={styles.heroTitle}>
               Empowering Rural Healthcare Through Training and Telemedicine Centers
@@ -25,7 +26,7 @@ const Home = () => {
               IRME Telemedicine connects communities with quality healthcare through professional 
               training programmes and a network of assisted Telemedicine Centers across India.
             </p>
-            <div style={styles.heroStats}>
+            <div className="home-hero-stats">
               <div style={styles.statCard}>
                 <div style={styles.statNumber}>[TBD]</div>
                 <div style={styles.statLabel}>Trained Assistants</div>
@@ -60,7 +61,7 @@ const Home = () => {
             support or establish a healthcare service point in your community.
           </p>
           
-          <div style={styles.offeringsGrid}>
+          <div className="home-offerings-grid">
             {/* Telemedicine Training */}
             <article style={styles.offeringCard}>
               <div style={styles.offeringImagePlaceholder}>
@@ -140,7 +141,7 @@ const Home = () => {
         {/* How It Works */}
         <section style={styles.section}>
           <h2 style={styles.sectionTitle}>How IRME Telemedicine Works</h2>
-          <div style={styles.stepsGrid}>
+          <div className="home-steps-grid">
             <div style={styles.stepCard}>
               <div style={styles.stepNumber}>1</div>
               <h3 style={styles.stepTitle}>Patient Visits TMC or Registers Online</h3>
@@ -171,7 +172,7 @@ const Home = () => {
         {/* Trust Indicators */}
         <section style={styles.section}>
           <h2 style={styles.sectionTitle}>Why Choose IRME</h2>
-          <div style={styles.trustGrid}>
+          <div className="home-trust-grid">
             <div style={styles.trustCard}>
               <div style={styles.trustIcon}>🎓</div>
               <h3 style={styles.trustTitle}>Professional Training</h3>
@@ -209,7 +210,7 @@ const Home = () => {
           <p style={styles.ctaText}>
             Join IRME Telemedicine today and be part of India's growing rural healthcare support network.
           </p>
-          <div style={styles.ctaButtons}>
+          <div className="home-cta-buttons">
             <Link to="/telemedicine-course" style={styles.btnPrimaryCta}>
               Explore Training Course
             </Link>
@@ -240,7 +241,7 @@ const Home = () => {
             structured training in telemedicine support. The platform combines doctor consultation workflow, 
             patient coordination, digital records, video consultation, and guided follow-up in one system.
           </p>
-          <div style={styles.infoGrid}>
+          <div className="home-info-grid">
             <div style={styles.infoCard}>
               <h3 style={styles.infoCardTitle}>For Learners</h3>
               <p style={styles.infoCardText}>
@@ -279,18 +280,6 @@ const styles = {
     boxSizing: "border-box",
   },
 
-  // Hero Section
-  hero: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: "48px",
-    alignItems: "center",
-    marginBottom: "80px",
-    "@media (max-width: 768px)": {
-      gridTemplateColumns: "1fr",
-      gap: "32px",
-    },
-  },
   heroContent: {
     display: "flex",
     flexDirection: "column",
@@ -310,12 +299,6 @@ const styles = {
     lineHeight: 1.6,
     color: "#475569",
     fontWeight: 400,
-  },
-  heroStats: {
-    display: "grid",
-    gridTemplateColumns: "repeat(3, 1fr)",
-    gap: "16px",
-    marginTop: "16px",
   },
   statCard: {
     textAlign: "center",
@@ -382,12 +365,6 @@ const styles = {
     fontWeight: 400,
   },
 
-  // Core Offerings
-  offeringsGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 480px), 1fr))",
-    gap: "32px",
-  },
   offeringCard: {
     background: "#ffffff",
     borderRadius: "20px",
@@ -440,13 +417,6 @@ const styles = {
     flexWrap: "wrap",
   },
 
-  // Steps/How It Works
-  stepsGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-    gap: "32px",
-    marginTop: "48px",
-  },
   stepCard: {
     textAlign: "center",
     padding: "32px 24px",
@@ -481,13 +451,6 @@ const styles = {
     fontWeight: 400,
   },
 
-  // Trust Indicators
-  trustGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-    gap: "32px",
-    marginTop: "48px",
-  },
   trustCard: {
     textAlign: "center",
     padding: "32px 20px",
@@ -533,13 +496,6 @@ const styles = {
     opacity: 0.95,
     fontWeight: 400,
   },
-  ctaButtons: {
-    display: "flex",
-    gap: "16px",
-    justifyContent: "center",
-    flexWrap: "wrap",
-    marginBottom: "24px",
-  },
   ctaSmall: {
     fontSize: "0.9375rem",
     opacity: 0.9,
@@ -554,12 +510,6 @@ const styles = {
   // Info Section
   infoSection: {
     marginTop: "80px",
-  },
-  infoGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-    gap: "32px",
-    marginTop: "48px",
   },
   infoCard: {
     padding: "32px 28px",
