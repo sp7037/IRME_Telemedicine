@@ -1,5 +1,6 @@
 import React from "react";
 import { BRAND_NAVY } from "../constants/brandTheme";
+import { BRAND_HORIZONTAL_LOGO_PNG } from "../constants/brandAssets";
 
 /**
  * Public footer — matches Home.js IRME footer.
@@ -7,7 +8,13 @@ import { BRAND_NAVY } from "../constants/brandTheme";
 const HomeFooter = () => {
   return (
     <footer style={styles.footer}>
-      <p style={styles.footerTitle}>IRME INSTITUTE Telemedicine Platform</p>
+      <div style={styles.logoContainer}>
+        <img 
+          src={BRAND_HORIZONTAL_LOGO_PNG} 
+          alt="IRME Institute Telemedicine" 
+          style={styles.logo}
+        />
+      </div>
       <p style={styles.footerText}>
         Direct doctor consultations and center-facilitated care for better
         healthcare access.
@@ -23,25 +30,36 @@ const styles = {
   footer: {
     marginTop: "auto",
     backgroundColor: BRAND_NAVY,
-    color: "#cfe4ff",
+    color: "rgba(255, 255, 255, 0.85)",
     textAlign: "center",
-    padding: "20px 16px",
+    padding: "40px 20px 32px",
+    borderTop: "2px solid rgba(31, 118, 216, 0.5)",
   },
-  footerTitle: {
-    margin: 0,
-    fontWeight: 700,
-    fontSize: "15px",
+  logoContainer: {
+    display: "inline-flex",
+    backgroundColor: "#ffffff",
+    borderRadius: "24px",
+    padding: "12px 20px",
+    marginBottom: "20px",
+  },
+  logo: {
+    height: "36px",
+    width: "auto",
+    maxWidth: "280px",
+    objectFit: "contain",
+    display: "block",
   },
   footerText: {
-    margin: "8px auto 0",
-    fontSize: "14px",
-    maxWidth: "520px",
-    lineHeight: 1.55,
+    margin: "0 auto",
+    fontSize: "15px",
+    maxWidth: "560px",
+    lineHeight: 1.6,
+    opacity: 0.9,
   },
   copy: {
-    margin: "14px 0 0",
-    fontSize: "13px",
-    opacity: 0.85,
+    margin: "16px 0 0",
+    fontSize: "14px",
+    opacity: 0.75,
   },
 };
 

@@ -13,12 +13,9 @@ const HomeHeader = () => {
         <div style={styles.brandBlock}>
           <img
             src={BRAND_HORIZONTAL_LOGO_PNG}
-            alt="IRME Institute — Telemedicine"
+            alt="IRME Institute — Telemedicine: Rural India Deserves Best Medical Health Services"
             style={styles.brandLogo}
           />
-          <p style={styles.tagline}>
-            Rural India Deserves Best Medical Health Services
-          </p>
         </div>
       </Link>
       <div style={styles.topActions}>
@@ -42,47 +39,56 @@ const styles = {
     justifyContent: "space-between",
     alignItems: "center",
     flexWrap: "wrap",
-    gap: "16px",
-    padding: "20px 28px",
+    gap: "20px",
+    padding: "24px 32px",
     backgroundColor: BRAND_NAVY,
     color: "#ffffff",
     borderBottom: "3px solid #1f76d8",
+    boxShadow: "0 2px 8px rgba(0, 32, 67, 0.15)",
   },
   brandLink: {
     textDecoration: "none",
     color: "inherit",
+    transition: "opacity 150ms ease",
   },
   brandBlock: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "8px",
-    alignItems: "flex-start",
+    display: "inline-flex",
+    alignItems: "center",
+    backgroundColor: "#ffffff",
+    borderRadius: "28px",
+    padding: "12px 20px",
+    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.12)",
   },
   brandLogo: {
     display: "block",
-    height: "48px",
+    height: "44px",
     width: "auto",
     maxWidth: "min(380px, 85vw)",
     objectFit: "contain",
   },
   tagline: {
     margin: 0,
-    fontSize: "13px",
-    opacity: 0.95,
+    fontSize: "14px",
+    opacity: 0.92,
+    letterSpacing: "0.01em",
+    fontWeight: 500,
   },
   topActions: {
     display: "flex",
     flexWrap: "wrap",
-    gap: "10px",
+    gap: "12px",
+    alignItems: "center",
   },
   ghostButton: {
     color: "#ffffff",
     textDecoration: "none",
-    border: "1px solid rgba(255, 255, 255, 0.5)",
-    borderRadius: "8px",
-    padding: "8px 12px",
-    fontSize: "13px",
+    border: "1px solid rgba(255, 255, 255, 0.4)",
+    borderRadius: "10px",
+    padding: "10px 16px",
+    fontSize: "14px",
     fontWeight: 600,
+    transition: "background 150ms ease, border-color 150ms ease",
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
   },
 };
 

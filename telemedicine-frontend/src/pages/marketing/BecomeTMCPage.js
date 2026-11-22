@@ -7,6 +7,7 @@ import LeadCaptureForm from "../../components/marketing/LeadCaptureForm";
 import { m } from "../../constants/marketingLayout";
 import { seoCities, seoStates } from "../../data/seoLocations";
 import { whatsappUrl } from "../../constants/marketingContact";
+import "../../styles/marketingResponsive.css";
 
 const main = {
   flex: 1,
@@ -62,20 +63,29 @@ const BecomeTMCPage = () => (
         ]}
       />
 
-      <section style={m.hero}>
-        <h1 style={m.heroH1}>Start a Telemedicine Center in Your Area with IRME</h1>
-        <p style={m.heroLead}>
-          Help patients in your locality connect with verified doctors online while building a
-          professional healthcare service opportunity—subject to verification and the plan you
-          select with IRME.
-        </p>
-        <div style={m.heroCtas}>
-          <Link to="/register/tmc" className="site-cta-green" style={m.btnPrimary}>
-            Register as TMC
-          </Link>
-          <a href={whatsappUrl("I want to open a Telemedicine Center with IRME. Please share details.")} className="site-cta-ghost" style={m.btnSecondary}>
-            WhatsApp TMC Team
-          </a>
+      <section className="marketing-hero-with-image" style={{...m.hero, ...m.heroWithImage}}>
+        <div style={m.heroContent}>
+          <h1 style={m.heroH1}>Start a Telemedicine Center in Your Area with IRME</h1>
+          <p style={m.heroLead}>
+            Help patients in your locality connect with verified doctors online while building a
+            professional healthcare service opportunity—subject to verification and the plan you
+            select with IRME.
+          </p>
+          <div style={m.heroCtas}>
+            <Link to="/register/tmc" className="site-cta-green" style={m.btnPrimary}>
+              Register as TMC
+            </Link>
+            <a href={whatsappUrl("I want to open a Telemedicine Center with IRME. Please share details.")} className="site-cta-ghost" style={m.btnSecondary}>
+              WhatsApp TMC Team
+            </a>
+          </div>
+        </div>
+        <div className="marketing-hero-image" style={m.heroImage}>
+          <img 
+            src="/images/rural-health-center.jpg" 
+            alt="Healthcare facility and telemedicine center"
+            style={m.heroImageImg}
+          />
         </div>
       </section>
 
