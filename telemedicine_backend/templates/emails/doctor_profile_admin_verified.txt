@@ -1,0 +1,15 @@
+Hello {{ user.first_name|default:user.email }},
+
+Your IRME Telemedicine doctor profile has been verified by the admin team (documents and details checked).
+
+Consultation features remain disabled until an admin separately approves you for consultations. You will receive another email when you are approved to take consultation requests.
+
+Dashboard (sign in if prompted):
+{{ dashboard_url }}
+
+Sign in:
+{{ login_url }}
+
+For help, contact {{ support_email }}.
+
+IRME Telemedicine

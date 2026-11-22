@@ -1,0 +1,88 @@
+name: Deployment checks
+on:
+  push:
+    branches: ["codex/aiccloud-**"]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: ci-only-password
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 20
+    defaults:
+      run:
+        working-directory: telemedicine_backend
+    env:
+      DJANGO_SETTINGS_MODULE: telemedicine_project.ci_settings
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.lock
+      - run: python manage.py check
+      - run: python manage.py makemigrations --check --dry-run
+      - run: python manage.py test users consultations marketing --noinput --verbosity=2
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: telemedicine-frontend
+    env:
+      REACT_APP_API_BASE_URL: /api
+      REACT_APP_MEDIA_BASE_URL: https://telemedicine.irme.in
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: telemedicine-frontend/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - run: CI=true npm test -- --watchAll=false --runInBand
+      - run: CI=false npm run build
+  container:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: ci-only-password
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      SECRET_KEY: ci-only-not-a-runtime-secret-0000000000000000000000000000000
+      DB_NAME: postgres
+      DB_USER: postgres
+      DB_PASSWORD: ci-only-password
+      DB_HOST: 127.0.0.1
+      DB_SSLMODE: disable
+      MEDIA_ROOT: /data/media
+      WEB_CONCURRENCY: "1"
+      UPLOAD_STORAGE: filesystem
+      ALLOW_PERSISTENT_FILESYSTEM: "true"
+    steps:
+      - uses: actions/checkout@v5
+      - run: docker build -t irme-deployment:test .
+      - name: Start and probe the complete application
+        run: |
+          docker run -d --name irme-app --network host \
+            -e SECRET_KEY -e DB_NAME -e DB_USER -e DB_PASSWORD -e DB_HOST -e DB_SSLMODE -e MEDIA_ROOT -e WEB_CONCURRENCY -e UPLOAD_STORAGE -e ALLOW_PERSISTENT_FILESYSTEM \
+            --mount type=volume,source=irme-ci-media,target=/data/media irme-deployment:test
+          for i in $(seq 1 30); do
+            if curl --fail -s -H 'Host: telemedicine.irme.in' -H 'X-Forwarded-Proto: https' http://127.0.0.1:8000/api/healthz/; then break; fi
+            sleep 2
+          done
+          curl --fail -s -H 'Host: telemedicine.irme.in' -H 'X-Forwarded-Proto: https' http://127.0.0.1:8000/api/healthz/
+          curl --fail -s -H 'Host: telemedicine.irme.in' -H 'X-Forwarded-Proto: https' http://127.0.0.1:8000/admin/patients | grep 'id="root"'
+          curl --fail -s -H 'Host: telemedicine.irme.in' -H 'X-Forwarded-Proto: https' http://127.0.0.1:8000/static/admin/css/base.css > /dev/null
+      - if: always()
+        run: docker logs irme-app || true

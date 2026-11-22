@@ -1,0 +1,16 @@
+Hello {{ user.first_name|default:user.email }},
+
+Welcome to IRME Telemedicine.
+
+Please verify your telemedicine center coordinator account email using this OTP:
+
+{{ otp }}
+
+You can also open this verification page:
+{{ verify_url }}
+
+This OTP expires in {{ ttl_minutes }} minutes. After verification, you will be able to sign in and complete your center profile.
+
+If you did not create this center account, please ignore this email or contact {{ support_email }}.
+
+IRME Telemedicine

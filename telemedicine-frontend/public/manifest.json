@@ -1,0 +1,30 @@
+{
+  "short_name": "IRME Telemedicine",
+  "name": "IRME Institute Telemedicine",
+  "icons": [
+    {
+      "src": "irme_favicon_48.png",
+      "type": "image/png",
+      "sizes": "48x48"
+    },
+    {
+      "src": "irme_favicon_256.png",
+      "type": "image/png",
+      "sizes": "256x256"
+    },
+    {
+      "src": "irme_telemedicine_logo.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "irme_telemedicine_logo.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#062B4F",
+  "background_color": "#f5f8fc"
+}

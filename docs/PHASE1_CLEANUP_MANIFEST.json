@@ -1,0 +1,396 @@
+{
+  "date": "2026-11-20",
+  "action": "recoverable local archive; no file contents discarded",
+  "recovery_root": ".local-recovery/phase1-20261120-verified",
+  "baseline_zip": "working-source.zip",
+  "canonical_application_changed": false,
+  "entries": [
+    {
+      "path": "models.py",
+      "sha256": "11d27f86f5ff941c08a3316f2927260d5255f398e8f68ae710231544971057a6",
+      "bytes": 3616,
+      "recovery": "retired-files/models.py",
+      "status": "archived and SHA-256 verified"
+    },
+    {
+      "path": "serializer.py",
+      "sha256": "fa1a0988684708445bbaa2155915104b9683dce50245c490cd6f911639b11d3e",
+      "bytes": 4469,
+      "recovery": "retired-files/serializer.py",
+      "status": "archived and SHA-256 verified"
+    },
+    {
+      "path": "views.py",
+      "sha256": "98a8b60b657f3dc8ab03052767d377e26914842e8d7acef1b95a63c8fb705eae",
+      "bytes": 6905,
+      "recovery": "retired-files/views.py",
+      "status": "archived and SHA-256 verified"
+    },
+    {
+      "path": "consultations/consumers.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "recovery": "retired-files/consultations/consumers.py",
+      "status": "archived and SHA-256 verified"
+    },
+    {
+      "path": "consultations/routing.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "recovery": "retired-files/consultations/routing.py",
+      "status": "archived and SHA-256 verified"
+    },
+    {
+      "path": "consultations/video.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "recovery": "retired-files/consultations/video.py",
+      "status": "archived and SHA-256 verified"
+    },
+    {
+      "path": "telemedicine_project/settings.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "recovery": "retired-files/telemedicine_project/settings.py",
+      "status": "archived and SHA-256 verified"
+    },
+    {
+      "path": "telemedicine_project/asgi.py",
+      "sha256": "d4364b18702bc369e7d006468e32fb0f5cb88fa9831dba98fe4622d154af763c",
+      "bytes": 1700,
+      "recovery": "retired-files/telemedicine_project/asgi.py",
+      "status": "archived and SHA-256 verified"
+    },
+    {
+      "path": "ADMIN_PANEL_GUIDE.md",
+      "sha256": "ed633b421bd2348ee6d6e5efabf61b3ea9adde14d4a6c30fc09d5d60cf97b86f",
+      "bytes": 6725,
+      "recovery": "retired-files/ADMIN_PANEL_GUIDE.md",
+      "status": "archived and SHA-256 verified"
+    },
+    {
+      "path": "API_ACCESS_GUIDE.md",
+      "sha256": "9975baf6fd4ddc2256221597089fbf113bbca668b3dff639a1f50ad6c047c389",
+      "bytes": 2711,
+      "recovery": "retired-files/API_ACCESS_GUIDE.md",
+      "status": "archived and SHA-256 verified"
+    },
+    {
+      "path": "CODE_QUALITY_REVIEW.md",
+      "sha256": "6b54071e8fdd95d45edb575895a35ee24f43a4846005511e73c2333bfbac89f2",
+      "bytes": 11694,
+      "recovery": "retired-files/CODE_QUALITY_REVIEW.md",
+      "status": "archived and SHA-256 verified"
+    },
+    {
+      "path": "FIXES_APPLIED_SUMMARY.md",
+      "sha256": "2857382665b403c8c0dd80b81cee9f4391df1f18f9fcc6a76df7828ed71801f4",
+      "bytes": 6456,
+      "recovery": "retired-files/FIXES_APPLIED_SUMMARY.md",
+      "status": "archived and SHA-256 verified"
+    },
+    {
+      "path": "IMPROVEMENTS_NEEDED.md",
+      "sha256": "3612bb47682fcd12ff6b5207a5d6e25639709d738b29cd901cc8e5744d55566e",
+      "bytes": 13800,
+      "recovery": "retired-files/IMPROVEMENTS_NEEDED.md",
+      "status": "archived and SHA-256 verified"
+    },
+    {
+      "path": "QUICK_SUMMARY.md",
+      "sha256": "5928ffc75968734d51ad996065a44ab9ae24e9b8347fd007fb91f4c640b38427",
+      "bytes": 2946,
+      "recovery": "retired-files/QUICK_SUMMARY.md",
+      "status": "archived and SHA-256 verified"
+    },
+    {
+      "path": "TESTING_RESULTS.md",
+      "sha256": "5a0dcce9e6068c4439595d0568d760cb247f6253bd5c3477298b2cb1acd403b2",
+      "bytes": 5253,
+      "recovery": "retired-files/TESTING_RESULTS.md",
+      "status": "archived and SHA-256 verified"
+    },
+    {
+      "path": "USER_REGISTRATION_FEATURES.md",
+      "sha256": "7638d16236a01eb21c7c8740d114cdb5ada179fd091a0289547879df747dd283",
+      "bytes": 5761,
+      "recovery": "retired-files/USER_REGISTRATION_FEATURES.md",
+      "status": "archived and SHA-256 verified"
+    },
+    {
+      "path": "deploy/backend-upload-20260526-173756/.env.example",
+      "sha256": "aa6be8b910db59b3ebdbbd7b09490221fc83baa78920751ec6a268d694ba0782",
+      "bytes": 1806,
+      "recovery": "retired-files/deploy/backend-upload-20260526-173756/.env.example",
+      "canonical_exists": true,
+      "matches_canonical": false,
+      "status": "archived and SHA-256 verified"
+    },
+    {
+      "path": "deploy/backend-upload-20260526-173756/requirements.txt",
+      "sha256": "b60f5185896b03a72be0231b7ea62d2de4c8168bb6b065b364d59ee1527710ea",
+      "bytes": 384,
+      "recovery": "retired-files/deploy/backend-upload-20260526-173756/requirements.txt",
+      "canonical_exists": true,
+      "matches_canonical": true,
+      "status": "archived and SHA-256 verified"
+    },
+    {
+      "path": "deploy/backend-upload-20260526-173756/consultations/serializers.py",
+      "sha256": "72d4e05d562478dca50bba14190adc99d3a9d996a92d2a62564755b7cd26efc7",
+      "bytes": 45656,
+      "recovery": "retired-files/deploy/backend-upload-20260526-173756/consultations/serializers.py",
+      "canonical_exists": true,
+      "matches_canonical": true,
+      "status": "archived and SHA-256 verified"
+    },
+    {
+      "path": "deploy/backend-upload-20260526-173756/consultations/video.py",
+      "sha256": "0b27392972f6a334caafed301df55c66ee7d13de81a5649629e07941c34a7137",
+      "bytes": 11618,
+      "recovery": "retired-files/deploy/backend-upload-20260526-173756/consultations/video.py",
+      "canonical_exists": true,
+      "matches_canonical": true,
+      "status": "archived and SHA-256 verified"
+    },
+    {
+      "path": "deploy/backend-upload-20260526-173756/consultations/views.py",
+      "sha256": "6e4ff9346aef3fd2c9c810683be1552dceb1580ccd1ebd59819611e838e017ad",
+      "bytes": 101366,
+      "recovery": "retired-files/deploy/backend-upload-20260526-173756/consultations/views.py",
+      "canonical_exists": true,
+      "matches_canonical": true,
+      "status": "archived and SHA-256 verified"
+    },
+    {
+      "path": "deploy/backend-upload-20260526-173756/marketing/admin.py",
+      "sha256": "a5e8bdf335dd3dca1e468d5819ab948060590624368f375ed3d28c2e32c86662",
+      "bytes": 932,
+      "recovery": "retired-files/deploy/backend-upload-20260526-173756/marketing/admin.py",
+      "canonical_exists": true,
+      "matches_canonical": true,
+      "status": "archived and SHA-256 verified"
+    },
+    {
+      "path": "deploy/backend-upload-20260526-173756/marketing/apps.py",
+      "sha256": "59e2e1ff6424df5203b026103cbc0776cede57ad6d4f3f0f58629c53ea2fad52",
+      "bytes": 151,
+      "recovery": "retired-files/deploy/backend-upload-20260526-173756/marketing/apps.py",
+      "canonical_exists": true,
+      "matches_canonical": true,
+      "status": "archived and SHA-256 verified"
+    },
+    {
+      "path": "deploy/backend-upload-20260526-173756/marketing/models.py",
+      "sha256": "0bae7b09a88f35673bbb31957d4294f771970b2f79580b0cb2700dcd02a1acb6",
+      "bytes": 2796,
+      "recovery": "retired-files/deploy/backend-upload-20260526-173756/marketing/models.py",
+      "canonical_exists": true,
+      "matches_canonical": true,
+      "status": "archived and SHA-256 verified"
+    },
+    {
+      "path": "deploy/backend-upload-20260526-173756/marketing/serializers.py",
+      "sha256": "a196a5a17419dfc42d37506f538405148b1920762028df6eb12ec8d2e82adf9d",
+      "bytes": 965,
+      "recovery": "retired-files/deploy/backend-upload-20260526-173756/marketing/serializers.py",
+      "canonical_exists": true,
+      "matches_canonical": false,
+      "status": "archived and SHA-256 verified"
+    },
+    {
+      "path": "deploy/backend-upload-20260526-173756/marketing/urls.py",
+      "sha256": "ae98b3a6e1d4766907f130f53cba3c10b3ae439560c8abd0ed04de28d47bb089",
+      "bytes": 451,
+      "recovery": "retired-files/deploy/backend-upload-20260526-173756/marketing/urls.py",
+      "canonical_exists": true,
+      "matches_canonical": true,
+      "status": "archived and SHA-256 verified"
+    },
+    {
+      "path": "deploy/backend-upload-20260526-173756/marketing/views.py",
+      "sha256": "e07f9c457e1b8624ac980cb8724dd2e01ca5b3be6e0675be9df340af53683dd1",
+      "bytes": 2732,
+      "recovery": "retired-files/deploy/backend-upload-20260526-173756/marketing/views.py",
+      "canonical_exists": true,
+      "matches_canonical": false,
+      "status": "archived and SHA-256 verified"
+    },
+    {
+      "path": "deploy/backend-upload-20260526-173756/marketing/__init__.py",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "bytes": 1,
+      "recovery": "retired-files/deploy/backend-upload-20260526-173756/marketing/__init__.py",
+      "canonical_exists": true,
+      "matches_canonical": true,
+      "status": "archived and SHA-256 verified"
+    },
+    {
+      "path": "deploy/backend-upload-20260526-173756/telemedicine_project/settings.py",
+      "sha256": "e0aa35e1c38342cfd46466ec16561d4decedfbf5b05d8d1526067e16809f3c97",
+      "bytes": 11853,
+      "recovery": "retired-files/deploy/backend-upload-20260526-173756/telemedicine_project/settings.py",
+      "canonical_exists": true,
+      "matches_canonical": false,
+      "status": "archived and SHA-256 verified"
+    },
+    {
+      "path": "deploy/backend-upload-20260526-173756/telemedicine_project/urls.py",
+      "sha256": "0403c64c7fbf47e37950aae7516f7a813222d76ccdbe5e18c416343433869f27",
+      "bytes": 1497,
+      "recovery": "retired-files/deploy/backend-upload-20260526-173756/telemedicine_project/urls.py",
+      "canonical_exists": true,
+      "matches_canonical": true,
+      "status": "archived and SHA-256 verified"
+    },
+    {
+      "path": "deploy/backend-upload-20260526-173756/marketing/migrations/0001_initial.py",
+      "sha256": "e0c161a1967939def2eaf57ffa063fabe3d861e0e367d4f19d47d310bd4b5700",
+      "bytes": 3267,
+      "recovery": "retired-files/deploy/backend-upload-20260526-173756/marketing/migrations/0001_initial.py",
+      "canonical_exists": true,
+      "matches_canonical": true,
+      "status": "archived and SHA-256 verified"
+    },
+    {
+      "path": "deploy/backend-upload-20260526-173756/marketing/migrations/__init__.py",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "bytes": 1,
+      "recovery": "retired-files/deploy/backend-upload-20260526-173756/marketing/migrations/__init__.py",
+      "canonical_exists": true,
+      "matches_canonical": true,
+      "status": "archived and SHA-256 verified"
+    },
+    {
+      "path": "deploy/backend-upload-20260526-173756/marketing/__pycache__/admin.cpython-313.pyc",
+      "sha256": "3aa527b8d07ee43152d8ad7897cd2cdd6e151823e8a5dcb36e6f164993cf43aa",
+      "bytes": 1410,
+      "recovery": "retired-files/deploy/backend-upload-20260526-173756/marketing/__pycache__/admin.cpython-313.pyc",
+      "status": "archived and SHA-256 verified"
+    },
+    {
+      "path": "deploy/backend-upload-20260526-173756/marketing/__pycache__/apps.cpython-313.pyc",
+      "sha256": "cfd0d893810edf4fba6928f44a393a0419c6164ba419e315a99b0d201e186acf",
+      "bytes": 534,
+      "recovery": "retired-files/deploy/backend-upload-20260526-173756/marketing/__pycache__/apps.cpython-313.pyc",
+      "status": "archived and SHA-256 verified"
+    },
+    {
+      "path": "deploy/backend-upload-20260526-173756/marketing/__pycache__/models.cpython-313.pyc",
+      "sha256": "abd76a698a55cbacfe360cb0c4f8ab256faff4543806d44e9350acb2bb95e1c7",
+      "bytes": 5048,
+      "recovery": "retired-files/deploy/backend-upload-20260526-173756/marketing/__pycache__/models.cpython-313.pyc",
+      "status": "archived and SHA-256 verified"
+    },
+    {
+      "path": "deploy/backend-upload-20260526-173756/marketing/__pycache__/serializers.cpython-313.pyc",
+      "sha256": "e5a0177e30430dc85701f1c1e428c2a827859fb51a64bc6beff00e9aaff702fe",
+      "bytes": 2365,
+      "recovery": "retired-files/deploy/backend-upload-20260526-173756/marketing/__pycache__/serializers.cpython-313.pyc",
+      "status": "archived and SHA-256 verified"
+    },
+    {
+      "path": "deploy/backend-upload-20260526-173756/marketing/__pycache__/urls.cpython-313.pyc",
+      "sha256": "dd6dca3fdb7e235b7776fe2130c9ee95d1d672c318ad51dcd3dcda50e61ef73f",
+      "bytes": 718,
+      "recovery": "retired-files/deploy/backend-upload-20260526-173756/marketing/__pycache__/urls.cpython-313.pyc",
+      "status": "archived and SHA-256 verified"
+    },
+    {
+      "path": "deploy/backend-upload-20260526-173756/marketing/__pycache__/views.cpython-313.pyc",
+      "sha256": "30a5ae3a1e9aad22381a49b0d673a590f77c583693aeea03aaad11a1bf39da45",
+      "bytes": 4583,
+      "recovery": "retired-files/deploy/backend-upload-20260526-173756/marketing/__pycache__/views.cpython-313.pyc",
+      "status": "archived and SHA-256 verified"
+    },
+    {
+      "path": "deploy/backend-upload-20260526-173756/marketing/__pycache__/__init__.cpython-313.pyc",
+      "sha256": "19fb401596a0a839f19c3e28c17a1084157682aa14469d2ac5914039130e4eff",
+      "bytes": 164,
+      "recovery": "retired-files/deploy/backend-upload-20260526-173756/marketing/__pycache__/__init__.cpython-313.pyc",
+      "status": "archived and SHA-256 verified"
+    },
+    {
+      "path": "deploy/backend-callback-spam-20260526-183500/.env.example",
+      "sha256": "0d28f02145ae6a6caf1479bcba635b3d27e27a5c910ffef7211c2df1331744dd",
+      "bytes": 1917,
+      "recovery": "retired-files/deploy/backend-callback-spam-20260526-183500/.env.example",
+      "canonical_exists": true,
+      "matches_canonical": true,
+      "status": "archived and SHA-256 verified"
+    },
+    {
+      "path": "deploy/backend-callback-spam-20260526-183500/marketing/serializers.py",
+      "sha256": "3630f33aaaa1fe777c927e253a58bf936331139615b0ab22bf50958a4c29a9ee",
+      "bytes": 1785,
+      "recovery": "retired-files/deploy/backend-callback-spam-20260526-183500/marketing/serializers.py",
+      "canonical_exists": true,
+      "matches_canonical": true,
+      "status": "archived and SHA-256 verified"
+    },
+    {
+      "path": "deploy/backend-callback-spam-20260526-183500/marketing/views.py",
+      "sha256": "89910d56df335af7098abbce236a470214b8e0680b180c84ca378e17b33baf62",
+      "bytes": 4230,
+      "recovery": "retired-files/deploy/backend-callback-spam-20260526-183500/marketing/views.py",
+      "canonical_exists": true,
+      "matches_canonical": true,
+      "status": "archived and SHA-256 verified"
+    },
+    {
+      "path": "deploy/backend-callback-spam-20260526-183500/telemedicine_project/settings.py",
+      "sha256": "a242aa400a994a1dd3c76a63e210799045a7125057f7e4f4180798772d1a5cba",
+      "bytes": 12135,
+      "recovery": "retired-files/deploy/backend-callback-spam-20260526-183500/telemedicine_project/settings.py",
+      "canonical_exists": true,
+      "matches_canonical": true,
+      "status": "archived and SHA-256 verified"
+    },
+    {
+      "path": "telemedicine-frontend/frontend-build-video-controls-completion-fix.zip",
+      "sha256": "752fdc0f82ebc7cc6a9f1c089e9e04752365c6d7aafa956b8a7f9943ec65084c",
+      "bytes": 5205148,
+      "recovery": "retired-files/telemedicine-frontend/frontend-build-video-controls-completion-fix.zip",
+      "zip_integrity_ok": true,
+      "zip_members": 26,
+      "zip_only_frontend_build": false,
+      "status": "archived and SHA-256 verified"
+    },
+    {
+      "path": "telemedicine-frontend/frontend-build-video-fix.zip",
+      "sha256": "bcd53288da1718e9072ac8a5a77f8efabc8c5ccb7c7a77333ebff9d6c6151d9d",
+      "bytes": 5202059,
+      "recovery": "retired-files/telemedicine-frontend/frontend-build-video-fix.zip",
+      "zip_integrity_ok": true,
+      "zip_members": 26,
+      "zip_only_frontend_build": false,
+      "status": "archived and SHA-256 verified"
+    },
+    {
+      "path": "telemedicine-frontend/frontend-build-video-modal-fix.zip",
+      "sha256": "bac2a65d392aeb71135f2f6d6f4e562592213458c8a1ad0e8c6ef4663444465e",
+      "bytes": 5202359,
+      "recovery": "retired-files/telemedicine-frontend/frontend-build-video-modal-fix.zip",
+      "zip_integrity_ok": true,
+      "zip_members": 26,
+      "zip_only_frontend_build": false,
+      "status": "archived and SHA-256 verified"
+    },
+    {
+      "path": "AIDER_Deepseak_details.txt",
+      "bytes": 118,
+      "sha256": "6070e062be2bc3377a0fbd2759d1e4cdfe1210bc37b280e9371b60664996b51e",
+      "recovery": "retired-files/AIDER_Deepseak_details.txt",
+      "status": "archived privately and SHA-256 verified",
+      "baseline_zip_excluded": "private historical note"
+    },
+    {
+      "path": "misc.txt",
+      "bytes": 1547,
+      "sha256": "8343c45a70ea031963377c55cee70d4fa0f9a9dba0f12f4acd21c1a85ae5fae2",
+      "recovery": "retired-files/misc.txt",
+      "status": "archived privately and SHA-256 verified",
+      "baseline_zip_excluded": "private historical note"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+Hello {{ user.first_name|default:user.email }},
+
+Your IRME telemedicine center account email has been verified successfully.
+
+You can now sign in and access your coordinator dashboard:
+{{ dashboard_url }}
+
+Sign in:
+{{ login_url }}
+
+For help, contact {{ support_email }}.
+
+IRME Telemedicine

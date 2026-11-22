@@ -1,0 +1,39 @@
+<!doctype html>
+<html>
+  <body style="margin:0;background:#f3f7fb;font-family:Arial,Helvetica,sans-serif;color:#10243e;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f3f7fb;padding:28px 12px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;background:#ffffff;border:1px solid #d7e5f5;border-radius:10px;overflow:hidden;">
+            <tr>
+              <td style="background:#06345f;color:#ffffff;padding:22px 28px;">
+                <h1 style="margin:0;font-size:22px;">IRME Telemedicine</h1>
+                <p style="margin:6px 0 0;color:#bfe3ff;">Profile change request received</p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:28px;">
+                <p style="margin-top:0;">Hello {{ user.first_name|default:user.email }},</p>
+                <p>We received your request to update your doctor profile. Our admin team will review it shortly.</p>
+                <p style="margin-bottom:8px;"><strong>Your request includes:</strong></p>
+                <ul style="margin-top:0;padding-left:22px;color:#304f72;">
+                  {% for line in summary_parts %}
+                  <li>{{ line }}</li>
+                  {% empty %}
+                  <li>See your dashboard for details.</li>
+                  {% endfor %}
+                </ul>
+                <p>Your current verified profile and documents remain active until this change is approved.</p>
+                <p style="text-align:center;margin:26px 0;">
+                  <a href="{{ profile_url }}" style="background:#1762bf;color:#ffffff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:bold;display:inline-block;">View profile</a>
+                </p>
+                <p style="font-size:13px;color:#4c6480;">Dashboard: <a href="{{ dashboard_url }}" style="color:#1762bf;">{{ dashboard_url }}</a></p>
+                <p style="font-size:13px;color:#4c6480;">For help, contact {{ support_email }}.</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

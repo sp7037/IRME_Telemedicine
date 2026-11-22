@@ -1,0 +1,6 @@
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Disallow:
+Disallow: /find-centers
+
+Sitemap: https://telemedicine.irme.in/sitemap.xml

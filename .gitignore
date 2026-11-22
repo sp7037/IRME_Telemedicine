@@ -1,0 +1,52 @@
+# Python
+venv/
+.venv/
+.pytest_cache/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+media/
+staticfiles/
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Node / React
+node_modules/
+coverage/
+build/
+.pnp
+.pnp.js
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+.aider*
+
+# Local recovery snapshots and validation output (may contain private source)
+.local-recovery/
+.local-validation/
+
+# Private historical notes: never re-add when restoring local recovery files
+/AIDER_Deepseak_details.txt
+/misc.txt

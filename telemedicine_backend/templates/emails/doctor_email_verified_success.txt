@@ -1,0 +1,16 @@
+Hello {{ user.first_name|default:user.email }},
+
+Your IRME doctor account email has been verified successfully.
+
+Next step:
+Sign in and complete your professional profile:
+{{ profile_url }}
+
+After you submit your profile and documents, the admin team will review and approve your account before you can take consultations.
+
+Sign in:
+{{ login_url }}
+
+For help, contact {{ support_email }}.
+
+IRME Telemedicine

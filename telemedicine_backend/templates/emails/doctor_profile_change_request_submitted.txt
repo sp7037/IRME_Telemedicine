@@ -1,0 +1,22 @@
+Hello {{ user.first_name|default:user.email }},
+
+We received your request to update your IRME Telemedicine doctor profile. An administrator will review it shortly.
+
+Requested updates include:
+{% for line in summary_parts %}
+- {{ line }}
+{% empty %}
+- (See your dashboard for details.)
+{% endfor %}
+
+Your current verified profile and documents stay visible to patients until this request is approved.
+
+Open your profile (sign in if prompted):
+{{ profile_url }}
+
+Dashboard:
+{{ dashboard_url }}
+
+For help, contact {{ support_email }}.
+
+IRME Telemedicine

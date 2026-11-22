@@ -1,0 +1,48 @@
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+/* Registration / auth fields — focus ring aligned with IRME theme */
+.auth-input,
+.auth-select {
+  width: 100%;
+  box-sizing: border-box;
+  height: 44px;
+  border-radius: 10px;
+  border: 1px solid #c6d7eb;
+  padding: 0 14px;
+  font-size: 15px;
+  color: #10243e;
+  background-color: #fbfdff;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.auth-select {
+  cursor: pointer;
+}
+
+.auth-input::placeholder {
+  color: #8a9eb4;
+}
+
+.auth-input:focus,
+.auth-select:focus {
+  outline: none;
+  border-color: #1f76d8;
+  box-shadow: 0 0 0 3px rgba(31, 118, 216, 0.22);
+}
+
+.auth-input:hover:not(:focus),
+.auth-select:hover:not(:focus) {
+  border-color: #a8c0df;
+}
