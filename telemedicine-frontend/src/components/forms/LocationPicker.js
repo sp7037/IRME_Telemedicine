@@ -275,10 +275,8 @@ const LocationPicker = ({ value = {}, onChange, error }) => {
 
       {error && <p style={styles.errorText}>{error}</p>}
       
-      {!hasGoogleMaps && (
-        <p style={styles.helperText}>
-          💡 For Google Maps address search, set REACT_APP_GOOGLE_MAPS_API_KEY environment variable
-        </p>
+      {!hasGoogleMaps && process.env.NODE_ENV === 'development' && (
+        console.log('[LocationPicker] Google Maps API key not configured. Set REACT_APP_GOOGLE_MAPS_API_KEY for Places Autocomplete.')
       )}
     </div>
   );
