@@ -127,6 +127,29 @@ export const m = {
     borderRadius: "20px",
     padding: "clamp(32px, 5vw, 56px)",
     boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+    position: "relative",
+    overflow: "hidden",
+  },
+  heroWithImage: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: "32px",
+    alignItems: "center",
+    padding: 0,
+  },
+  heroContent: {
+    padding: "clamp(32px, 5vw, 56px)",
+  },
+  heroImage: {
+    height: "100%",
+    minHeight: "300px",
+    overflow: "hidden",
+  },
+  heroImageImg: {
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+    display: "block",
   },
   heroH1: {
     margin: 0,

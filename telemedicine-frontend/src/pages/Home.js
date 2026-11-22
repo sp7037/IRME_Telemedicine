@@ -26,30 +26,13 @@ const Home = () => {
               IRME Telemedicine connects communities with quality healthcare through professional 
               training programmes and a network of assisted Telemedicine Centers across India.
             </p>
-            <div className="home-hero-stats">
-              <div style={styles.statCard}>
-                <div style={styles.statNumber}>[TBD]</div>
-                <div style={styles.statLabel}>Trained Assistants</div>
-              </div>
-              <div style={styles.statCard}>
-                <div style={styles.statNumber}>[TBD]</div>
-                <div style={styles.statLabel}>Active Centers</div>
-              </div>
-              <div style={styles.statCard}>
-                <div style={styles.statNumber}>[TBD]</div>
-                <div style={styles.statLabel}>Consultations</div>
-              </div>
-            </div>
           </div>
-          {/* Hero image placeholder - replace with actual image */}
-          <div style={styles.heroImagePlaceholder}>
-            <div style={styles.imagePlaceholderText}>
-              📷 Replace with: Professional photo of telemedicine consultation or training session
-              <br />
-              Suggested: Unsplash/Pexels - "telemedicine consultation" or "medical training"
-              <br />
-              Size: 800x600px optimized
-            </div>
+          <div style={styles.heroImage}>
+            <img 
+              src="/images/hero-telemedicine.jpg" 
+              alt="Healthcare professional providing telemedicine consultation"
+              style={styles.heroImageImg}
+            />
           </div>
         </section>
 
@@ -64,12 +47,12 @@ const Home = () => {
           <div className="home-offerings-grid">
             {/* Telemedicine Training */}
             <article style={styles.offeringCard}>
-              <div style={styles.offeringImagePlaceholder}>
-                <div style={styles.imagePlaceholderText}>
-                  📷 Training classroom/online learning
-                  <br />
-                  400x250px
-                </div>
+              <div style={styles.offeringImage}>
+                <img 
+                  src="/images/training-classroom.jpg" 
+                  alt="Medical training and education"
+                  style={styles.offeringImageImg}
+                />
               </div>
               <div style={styles.offeringContent}>
                 <h3 style={styles.offeringTitle}>
@@ -101,12 +84,12 @@ const Home = () => {
 
             {/* TMC Opportunity */}
             <article style={styles.offeringCard}>
-              <div style={styles.offeringImagePlaceholder}>
-                <div style={styles.imagePlaceholderText}>
-                  📷 Telemedicine center/clinic
-                  <br />
-                  400x250px
-                </div>
+              <div style={styles.offeringImage}>
+                <img 
+                  src="/images/tmc-center.jpg" 
+                  alt="Telemedicine center and healthcare facility"
+                  style={styles.offeringImageImg}
+                />
               </div>
               <div style={styles.offeringContent}>
                 <h3 style={styles.offeringTitle}>
@@ -300,39 +283,16 @@ const styles = {
     color: "#475569",
     fontWeight: 400,
   },
-  statCard: {
-    textAlign: "center",
-    padding: "16px",
-    background: "#f8fafb",
-    borderRadius: "12px",
-    border: "1px solid #e7ecf1",
-  },
-  statNumber: {
-    fontSize: "1.75rem",
-    fontWeight: 700,
-    color: SITE_DEEP_BLUE,
-  },
-  statLabel: {
-    fontSize: "0.875rem",
-    color: "#64748b",
-    marginTop: "4px",
-    fontWeight: 500,
-  },
-  heroImagePlaceholder: {
-    background: "#f1f5f9",
+  heroImage: {
     borderRadius: "16px",
-    aspectRatio: "4/3",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    border: "2px dashed #cbd5e1",
-    padding: "20px",
+    overflow: "hidden",
+    boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
   },
-  imagePlaceholderText: {
-    textAlign: "center",
-    color: "#64748b",
-    fontSize: "0.875rem",
-    lineHeight: 1.6,
+  heroImageImg: {
+    width: "100%",
+    height: "auto",
+    display: "block",
+    objectFit: "cover",
   },
 
   // Sections
@@ -373,13 +333,16 @@ const styles = {
     border: "1px solid #e7ecf1",
     transition: "box-shadow 200ms ease, transform 200ms ease",
   },
-  offeringImagePlaceholder: {
-    background: "#e2e8f0",
+  offeringImage: {
     height: "250px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    borderBottom: "1px solid #cbd5e1",
+    overflow: "hidden",
+    backgroundColor: "#f1f5f9",
+  },
+  offeringImageImg: {
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+    display: "block",
   },
   offeringContent: {
     padding: "32px",
