@@ -28,11 +28,28 @@ const Home = () => {
             </p>
           </div>
           <div style={styles.heroImage}>
-            <img 
-              src="/images/hero-telemedicine.jpg" 
-              alt="Healthcare professional providing telemedicine consultation"
-              style={styles.heroImageImg}
-            />
+            <picture>
+              <source 
+                media="(max-width: 768px)" 
+                srcSet="/images/hero-tmc-mobile.webp" 
+                type="image/webp" 
+              />
+              <source 
+                media="(max-width: 768px)" 
+                srcSet="/images/hero-tmc-mobile.jpg" 
+                type="image/jpeg" 
+              />
+              <source 
+                srcSet="/images/hero-tmc-desktop.webp" 
+                type="image/webp" 
+              />
+              <img 
+                src="/images/hero-tmc-desktop.jpg" 
+                alt="IRME Telemedicine Center: health worker assisting rural patient with video consultation, connecting with doctor through IRME telemedicine platform"
+                style={styles.heroImageImg}
+                loading="eager"
+              />
+            </picture>
           </div>
         </section>
 

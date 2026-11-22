@@ -13,12 +13,9 @@ const HomeHeader = () => {
         <div style={styles.brandBlock}>
           <img
             src={BRAND_HORIZONTAL_LOGO_PNG}
-            alt="IRME Institute — Telemedicine"
+            alt="IRME Institute — Telemedicine: Rural India Deserves Best Medical Health Services"
             style={styles.brandLogo}
           />
-          <p style={styles.tagline}>
-            Rural India Deserves Best Medical Health Services
-          </p>
         </div>
       </Link>
       <div style={styles.topActions}>
@@ -55,16 +52,18 @@ const styles = {
     transition: "opacity 150ms ease",
   },
   brandBlock: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "10px",
-    alignItems: "flex-start",
+    display: "inline-flex",
+    alignItems: "center",
+    backgroundColor: "#ffffff",
+    borderRadius: "28px",
+    padding: "12px 20px",
+    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.12)",
   },
   brandLogo: {
     display: "block",
-    height: "52px",
+    height: "44px",
     width: "auto",
-    maxWidth: "min(400px, 85vw)",
+    maxWidth: "min(380px, 85vw)",
     objectFit: "contain",
   },
   tagline: {
