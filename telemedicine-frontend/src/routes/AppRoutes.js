@@ -27,7 +27,9 @@ const AppRoutes = () => {
     <Router>
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/design-system" element={<DesignSystemShowcase />} />
+        {process.env.NODE_ENV === 'development' && (
+          <Route path="/design-system" element={<DesignSystemShowcase />} />
+        )}
         <Route path="/join/doctor" element={<JoinDoctorPage />} />
         <Route path="/tmc" element={<BecomeTMCPage />} />
         <Route path="/join-irme" element={<JoinIRMEPage />} />
