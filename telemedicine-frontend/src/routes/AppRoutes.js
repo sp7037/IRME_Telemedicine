@@ -8,7 +8,7 @@ import DoctorDashboard from "../pages/users/dashboards/DoctorDashboard";
 import TMCDashboard from "../pages/users/dashboards/TMCDashboard";
 import AdminDashboard from "../pages/users/dashboards/AdminDashboard";
 
-import RegisterPatient from "../pages/users/RegisterPatient";
+import RegisterPatientNew from "../pages/users/RegisterPatientNew";
 import RegisterDoctor from "../pages/users/RegisterDoctor";
 import RegisterTMC from "../pages/users/RegisterTMC";
 import VerifyDoctorEmail from "../pages/users/VerifyDoctorEmail";
@@ -41,7 +41,7 @@ const AppRoutes = () => {
         <Route path="/verify-email" element={<VerifyDoctorEmail />} />
         <Route path="/verify-doctor-email" element={<VerifyDoctorEmail />} />
 
-        <Route path="/register/patient" element={<RegisterPatient />} />
+        <Route path="/register/patient" element={<RegisterPatientNew />} />
         <Route path="/register/doctor" element={<RegisterDoctor />} />
         <Route path="/register/tmc" element={<RegisterTMC />} />
         <Route path="/logout" element={<Logout />} />
