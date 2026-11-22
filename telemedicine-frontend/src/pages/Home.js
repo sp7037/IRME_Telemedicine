@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import PublicLayout from "../components/site/PublicLayout";
 import Seo from "../components/Seo";
 import { whatsappUrl } from "../constants/marketingContact";
@@ -7,6 +8,8 @@ import { SITE_CTA_GREEN, SITE_HEADER_NAVY, SITE_DEEP_BLUE } from "../constants/b
 import "./HomeResponsive.css";
 
 const Home = () => {
+  const { t } = useTranslation();
+  
   return (
     <PublicLayout>
       <Seo
@@ -20,11 +23,10 @@ const Home = () => {
         <section className="home-hero">
           <div style={styles.heroContent}>
             <h1 style={styles.heroTitle}>
-              Empowering Rural Healthcare Through Training and Telemedicine Centers
+              {t('home.heroTitle')}
             </h1>
             <p style={styles.heroSubtitle}>
-              IRME Telemedicine connects communities with quality healthcare through professional 
-              training programmes and a network of assisted Telemedicine Centers across India.
+              {t('home.heroSubtitle')}
             </p>
           </div>
           <div style={styles.heroImage}>
@@ -55,10 +57,9 @@ const Home = () => {
 
         {/* Core Offerings Section */}
         <section style={styles.section}>
-          <h2 style={styles.sectionTitle}>Our Core Programmes</h2>
+          <h2 style={styles.sectionTitle}>{t('home.coreProgrammesTitle')}</h2>
           <p style={styles.sectionSubtitle}>
-            Choose the path that fits your goals—whether you want to build skills in telemedicine 
-            support or establish a healthcare service point in your community.
+            {t('home.coreProgrammesSubtitle')}
           </p>
           
           <div className="home-offerings-grid">
@@ -73,27 +74,26 @@ const Home = () => {
               </div>
               <div style={styles.offeringContent}>
                 <h3 style={styles.offeringTitle}>
-                  Telemedicine Assistant Certificate Course
+                  {t('home.courseTitle')}
                 </h3>
                 <p style={styles.offeringDescription}>
-                  3-month online programme to become a certified Telemedicine Assistant. Learn patient 
-                  support, consultation workflow, digital health records, and TMC operations.
+                  {t('home.courseDescription')}
                 </p>
                 <div style={styles.offeringBenefits}>
-                  <div style={styles.benefitItem}>✓ 3 months online training</div>
-                  <div style={styles.benefitItem}>✓ Certificate upon completion</div>
-                  <div style={styles.benefitItem}>✓ Practical skills & workflow</div>
-                  <div style={styles.benefitItem}>✓ Career support guidance</div>
+                  <div style={styles.benefitItem}>✓ {t('home.courseBenefit1')}</div>
+                  <div style={styles.benefitItem}>✓ {t('home.courseBenefit2')}</div>
+                  <div style={styles.benefitItem}>✓ {t('home.courseBenefit3')}</div>
+                  <div style={styles.benefitItem}>✓ {t('home.courseBenefit4')}</div>
                 </div>
                 <div style={styles.offeringCtas}>
                   <Link to="/telemedicine-course" style={styles.btnPrimary}>
-                    View Course Details
+                    {t('home.viewCourseDetails')}
                   </Link>
                   <a 
                     href={whatsappUrl("I want details about the Telemedicine Assistant Certificate Course.")} 
                     style={styles.btnSecondary}
                   >
-                    WhatsApp Enquiry
+                    {t('home.whatsappEnquiry')}
                   </a>
                 </div>
               </div>
@@ -110,27 +110,26 @@ const Home = () => {
               </div>
               <div style={styles.offeringContent}>
                 <h3 style={styles.offeringTitle}>
-                  Open a Telemedicine Center
+                  {t('home.tmcTitle')}
                 </h3>
                 <p style={styles.offeringDescription}>
-                  Establish a local assisted healthcare point in your community. Connect patients with 
-                  verified doctors online while building a professional service opportunity.
+                  {t('home.tmcDescription')}
                 </p>
                 <div style={styles.offeringBenefits}>
-                  <div style={styles.benefitItem}>✓ Dashboard & platform access</div>
-                  <div style={styles.benefitItem}>✓ Operational training provided</div>
-                  <div style={styles.benefitItem}>✓ Doctor network connection</div>
-                  <div style={styles.benefitItem}>✓ Income opportunity</div>
+                  <div style={styles.benefitItem}>✓ {t('home.tmcBenefit1')}</div>
+                  <div style={styles.benefitItem}>✓ {t('home.tmcBenefit2')}</div>
+                  <div style={styles.benefitItem}>✓ {t('home.tmcBenefit3')}</div>
+                  <div style={styles.benefitItem}>✓ {t('home.tmcBenefit4')}</div>
                 </div>
                 <div style={styles.offeringCtas}>
                   <Link to="/tmc" style={styles.btnPrimary}>
-                    Learn About TMCs
+                    {t('home.learnAboutTMCs')}
                   </Link>
                   <a 
                     href={whatsappUrl("I want to open a Telemedicine Center with IRME.")} 
                     style={styles.btnSecondary}
                   >
-                    WhatsApp TMC Team
+                    {t('home.whatsappTMCTeam')}
                   </a>
                 </div>
               </div>
@@ -140,30 +139,27 @@ const Home = () => {
 
         {/* How It Works */}
         <section style={styles.section}>
-          <h2 style={styles.sectionTitle}>How IRME Telemedicine Works</h2>
+          <h2 style={styles.sectionTitle}>{t('home.howItWorksTitle')}</h2>
           <div className="home-steps-grid">
             <div style={styles.stepCard}>
               <div style={styles.stepNumber}>1</div>
-              <h3 style={styles.stepTitle}>Patient Visits TMC or Registers Online</h3>
+              <h3 style={styles.stepTitle}>{t('home.howItWorksStep1Title')}</h3>
               <p style={styles.stepText}>
-                Patients can visit a local Telemedicine Center for assisted care or register 
-                directly on the platform for online consultations.
+                {t('home.howItWorksStep1Text')}
               </p>
             </div>
             <div style={styles.stepCard}>
               <div style={styles.stepNumber}>2</div>
-              <h3 style={styles.stepTitle}>Connect with Verified Doctors</h3>
+              <h3 style={styles.stepTitle}>{t('home.howItWorksStep2Title')}</h3>
               <p style={styles.stepText}>
-                Trained TMC assistants or our platform connects patients with verified doctors 
-                for video or chat consultations.
+                {t('home.howItWorksStep2Text')}
               </p>
             </div>
             <div style={styles.stepCard}>
               <div style={styles.stepNumber}>3</div>
-              <h3 style={styles.stepTitle}>Consultation & Digital Records</h3>
+              <h3 style={styles.stepTitle}>{t('home.howItWorksStep3Title')}</h3>
               <p style={styles.stepText}>
-                Doctors provide consultation, prescriptions, and follow-up care. All records 
-                are maintained digitally for easy access.
+                {t('home.howItWorksStep3Text')}
               </p>
             </div>
           </div>
@@ -171,34 +167,34 @@ const Home = () => {
 
         {/* Trust Indicators */}
         <section style={styles.section}>
-          <h2 style={styles.sectionTitle}>Why Choose IRME</h2>
+          <h2 style={styles.sectionTitle}>{t('home.trustTitle')}</h2>
           <div className="home-trust-grid">
             <div style={styles.trustCard}>
+              <div style={styles.trustIcon}>✓</div>
+              <h3 style={styles.trustTitle}>{t('home.trustVerifiedTitle')}</h3>
+              <p style={styles.trustText}>
+                {t('home.trustVerifiedText')}
+              </p>
+            </div>
+            <div style={styles.trustCard}>
+              <div style={styles.trustIcon}>🌐</div>
+              <h3 style={styles.trustTitle}>{t('home.trustAccessibleTitle')}</h3>
+              <p style={styles.trustText}>
+                {t('home.trustAccessibleText')}
+              </p>
+            </div>
+            <div style={styles.trustCard}>
               <div style={styles.trustIcon}>🎓</div>
-              <h3 style={styles.trustTitle}>Professional Training</h3>
+              <h3 style={styles.trustTitle}>{t('home.trustTrainingTitle')}</h3>
               <p style={styles.trustText}>
-                Structured curriculum developed for practical telemedicine support skills
+                {t('home.trustTrainingText')}
               </p>
             </div>
             <div style={styles.trustCard}>
-              <div style={styles.trustIcon}>🏥</div>
-              <h3 style={styles.trustTitle}>Verified Doctor Network</h3>
+              <div style={styles.trustIcon}>🔒</div>
+              <h3 style={styles.trustTitle}>{t('home.trustSecureTitle')}</h3>
               <p style={styles.trustText}>
-                Access to qualified, verified medical professionals across specialties
-              </p>
-            </div>
-            <div style={styles.trustCard}>
-              <div style={styles.trustIcon}>📱</div>
-              <h3 style={styles.trustTitle}>Digital Platform</h3>
-              <p style={styles.trustText}>
-                Complete technology platform for consultations, records, and coordination
-              </p>
-            </div>
-            <div style={styles.trustCard}>
-              <div style={styles.trustIcon}>🤝</div>
-              <h3 style={styles.trustTitle}>Operational Support</h3>
-              <p style={styles.trustText}>
-                Ongoing guidance and training for TMC operators and assistants
+                {t('home.trustSecureText')}
               </p>
             </div>
           </div>
@@ -206,9 +202,9 @@ const Home = () => {
 
         {/* CTA Section */}
         <section style={styles.ctaSection}>
-          <h2 style={styles.ctaTitle}>Ready to Get Started?</h2>
+          <h2 style={styles.ctaTitle}>{t('home.ctaTitle')}</h2>
           <p style={styles.ctaText}>
-            Join IRME Telemedicine today and be part of India's growing rural healthcare support network.
+            {t('home.ctaSubtitle')}
           </p>
           <div className="home-cta-buttons">
             <Link to="/telemedicine-course" style={styles.btnPrimaryCta}>

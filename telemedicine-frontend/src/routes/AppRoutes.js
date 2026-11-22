@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Home from "../pages/Home";
 import Login from "../pages/users/Login";
 import ProtectedRoute from "../components/ProtectedRoute";
+import DesignSystemShowcase from "../pages/DesignSystemShowcase";
 
 import PatientDashboard from "../pages/users/dashboards/PatientDashboard";
 import DoctorDashboard from "../pages/users/dashboards/DoctorDashboard";
@@ -26,6 +27,9 @@ const AppRoutes = () => {
     <Router>
       <Routes>
         <Route path="/" element={<Home />} />
+        {process.env.NODE_ENV === 'development' && (
+          <Route path="/design-system" element={<DesignSystemShowcase />} />
+        )}
         <Route path="/join/doctor" element={<JoinDoctorPage />} />
         <Route path="/tmc" element={<BecomeTMCPage />} />
         <Route path="/join-irme" element={<JoinIRMEPage />} />

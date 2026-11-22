@@ -1,8 +1,10 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { BRAND_HORIZONTAL_LOGO_PNG } from "../constants/brandAssets";
 import { DASHBOARD_HEADER_OFFSET_PX } from "../constants/dashboardLayout";
 import { getUserType } from "../utils/authSession";
+import LanguageSwitcher from "./LanguageSwitcher";
 
 import {
   BRAND_BLUE_MID,
@@ -21,6 +23,7 @@ const THEME = {
  * Optional `role` prop overrides when storage is wrong.
  */
 const Header = ({ role: roleProp, balance, onBalanceClick }) => {
+  const { t } = useTranslation();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [winW, setWinW] = useState(typeof window !== "undefined" ? window.innerWidth : 1024);
@@ -40,36 +43,36 @@ const Header = ({ role: roleProp, balance, onBalanceClick }) => {
   const links = useMemo(() => {
     if (role === "doctor") {
       return [
-        { to: "/dashboard/doctor", label: "Operations" },
-        { to: "/doctor/profile", label: "Profile" },
-        { to: "/doctor/availability", label: "Availability" },
-        { to: "/doctor/schedule", label: "Schedule" },
-        { to: "/doctor/appointments", label: "Appointments" },
-        { to: "/doctor/queue", label: "Queue" },
-        { to: "/doctor/earnings", label: "Earnings" },
-        { to: "/doctor/history", label: "History" },
+        { to: "/dashboard/doctor", label: t("nav.operations") },
+        { to: "/doctor/profile", label: t("nav.profile") },
+        { to: "/doctor/availability", label: t("nav.availability") },
+        { to: "/doctor/schedule", label: t("nav.schedule") },
+        { to: "/doctor/appointments", label: t("nav.appointments") },
+        { to: "/doctor/queue", label: t("nav.queue") },
+        { to: "/doctor/earnings", label: t("nav.earnings") },
+        { to: "/doctor/history", label: t("nav.history") },
       ];
     }
     if (role === "tmc") {
-      return [{ to: "/dashboard/tmc", label: "TMC dashboard" }];
+      return [{ to: "/dashboard/tmc", label: t("nav.dashboard") }];
     }
     if (role === "admin") {
       return [
-        { to: "/dashboard/admin", label: "Operations" },
-        { to: "/admin/fees", label: "Fees" },
-        { to: "/admin/tmc-wallets", label: "TMC wallets" },
-        { to: "/admin/doctors", label: "Doctors" },
-        { to: "/admin/patients", label: "Patients" },
-        { to: "/admin/reports", label: "Reports" },
+        { to: "/dashboard/admin", label: t("nav.operations") },
+        { to: "/admin/fees", label: t("nav.fees") },
+        { to: "/admin/tmc-wallets", label: t("nav.tmcWallets") },
+        { to: "/admin/doctors", label: t("nav.doctors") },
+        { to: "/admin/patients", label: t("nav.patients") },
+        { to: "/admin/reports", label: t("nav.reports") },
       ];
     }
     return [
-      { to: "/dashboard/patient", label: "Dashboard" },
-      { to: "/patient/profile", label: "Profile" },
-      { to: "/patient/book", label: "Book" },
-      { to: "/patient/history", label: "History" },
+      { to: "/dashboard/patient", label: t("nav.dashboard") },
+      { to: "/patient/profile", label: t("nav.profile") },
+      { to: "/patient/book", label: t("nav.book") },
+      { to: "/patient/history", label: t("nav.history") },
     ];
-  }, [role]);
+  }, [role, t]);
 
   const profileHref =
     role === "doctor" ? "/doctor/profile" : role === "tmc" ? "/dashboard/tmc" : role === "admin" ? "/dashboard/admin" : "/patient/profile";
@@ -104,14 +107,15 @@ const Header = ({ role: roleProp, balance, onBalanceClick }) => {
         ) : null}
         <div style={styles.right}>
           {onBalanceClick ? <button type="button" style={styles.profileBtn(THEME)} onClick={onBalanceClick}
-            aria-label={`Balance ${balance ?? "loading"} rupees, add funds and payment history`}>◉ ₹{balance ?? "…"}</button> : null}
+            aria-label={`${t("wallet.balance")} ${balance ?? t("common.loading")} rupees`}>◉ ₹{balance ?? "…"}</button> : null}
           {!compact ? (
             <>
+              <LanguageSwitcher compact={true} style={{ marginRight: 8 }} />
               <Link to={profileHref} style={styles.profileBtn(THEME)}>
-                Profile
+                {t("nav.profile")}
               </Link>
               <Link to="/logout" style={styles.logout}>
-                Logout
+                {t("nav.logout")}
               </Link>
             </>
           ) : null}
@@ -134,13 +138,16 @@ const Header = ({ role: roleProp, balance, onBalanceClick }) => {
             </Link>
           ))}
           <Link to={dashboardHref} style={styles.mobileLink}>
-            Home dashboard
+            {t("nav.home")} {t("nav.dashboard")}
           </Link>
           <Link to={profileHref} style={styles.mobileLink}>
-            Profile
+            {t("nav.profile")}
           </Link>
+          <div style={{ padding: "12px 8px" }}>
+            <LanguageSwitcher />
+          </div>
           <Link to="/logout" style={styles.mobileLinkLogout}>
-            Logout
+            {t("nav.logout")}
           </Link>
         </nav>
       ) : null}

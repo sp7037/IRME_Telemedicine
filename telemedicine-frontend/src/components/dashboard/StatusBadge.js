@@ -1,33 +1,40 @@
 import React from "react";
-
-const STATUS_COLORS = {
-  PENDING: { bg: "#fff4cc", fg: "#8a6d00" },
-  ACCEPTED: { bg: "#e4efff", fg: "#1f4f8f" },
-  QUEUED: { bg: "#efe9ff", fg: "#4a2f9b" },
-  IN_PROGRESS: { bg: "#e3f8ea", fg: "#1b6a3a" },
-  COMPLETED: { bg: "#eceff4", fg: "#3f4b5e" },
-  REJECTED: { bg: "#fde8e8", fg: "#9d1d1d" },
-  REJECTED_BY_PATIENT: { bg: "#fde8e8", fg: "#9d1d1d" },
-  POSTPONED: { bg: "#ffeedd", fg: "#8a4b10" },
-  CANCELED: { bg: "#fde8e8", fg: "#9d1d1d" },
-};
+import { useTranslation } from "react-i18next";
+import theme from "../../theme/tokens";
 
 const StatusBadge = ({ status }) => {
-  const safe = (status || "").toUpperCase();
-  const color = STATUS_COLORS[safe] || { bg: "#edf4fd", fg: "#174577" };
+  const { t } = useTranslation();
+  const safe = (status || "").toUpperCase().replace(/_/g, "");
+  
+  const statusMap = {
+    PENDING: "pending",
+    ACCEPTED: "accepted",
+    QUEUED: "queued",
+    INPROGRESS: "inProgress",
+    COMPLETED: "completed",
+    REJECTED: "rejected",
+    REJECTEDBYPATIENT: "rejected",
+    POSTPONED: "postponed",
+    CANCELED: "canceled",
+  };
+
+  const statusKey = statusMap[safe] || "pending";
+  const color = theme.colors.status[statusKey] || theme.colors.status.pending;
+  const label = t(`consultation.status.${statusKey}`, { defaultValue: status });
+
   return (
     <span
       style={{
         display: "inline-block",
-        padding: "4px 10px",
-        borderRadius: "999px",
-        fontSize: 12,
-        fontWeight: 700,
+        padding: `${theme.spacing[1]} ${theme.spacing[3]}`,
+        borderRadius: theme.radii.full,
+        fontSize: theme.typography.fontSize.xs,
+        fontWeight: theme.typography.fontWeight.bold,
         backgroundColor: color.bg,
         color: color.fg,
       }}
     >
-      {safe || "UNKNOWN"}
+      {label}
     </span>
   );
 };

@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import './styles/siteChrome.css';
 import './styles/homePage.css';
+import './i18n/config';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 

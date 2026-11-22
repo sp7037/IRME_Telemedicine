@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { loginUser } from "../../api/users";
 import PublicLayout from "../../components/site/PublicLayout";
 import { registrationLayout as L } from "../../constants/registrationLayout";
@@ -27,6 +28,7 @@ function nextMatchesRole(next, role) {
 }
 
 const Login = () => {
+  const { t } = useTranslation();
   const [credentials, setCredentials] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -82,15 +84,15 @@ const Login = () => {
             navigate("/dashboard");
         }
       } else {
-        setError("Login failed. Please try again.");
+        setError(t("auth.loginFailed"));
       }
     } catch (err) {
       if (err.nextStep === "VERIFY_EMAIL") {
         navigate(`/verify-email?email=${encodeURIComponent(err.email || credentials.email)}`);
       } else if (err.message && err.message.includes("Invalid email or password")) {
-        setError("Incorrect email or password.");
+        setError(t("auth.invalidCredentials"));
       } else {
-        setError("Login failed. Please try again.");
+        setError(t("auth.loginFailed"));
       }
     } finally {
       setLoading(false);
@@ -107,7 +109,7 @@ const Login = () => {
     <PublicLayout>
       <main style={L.main}>
         <section style={L.heroStrip}>
-          <h1 style={L.heroTitle}>Sign in</h1>
+          <h1 style={L.heroTitle}>{t("auth.signIn")}</h1>
           <p style={L.heroSubtitle}>
             Access your IRME account as a patient, doctor, or telemedicine
             center coordinator. Use the email and password you registered with.
@@ -120,7 +122,7 @@ const Login = () => {
           <form onSubmit={handleLogin} style={L.form}>
             <div style={L.field}>
               <label style={L.label} htmlFor="login-email">
-                Email
+                {t("auth.email")}
               </label>
               <input
                 id="login-email"
@@ -136,7 +138,7 @@ const Login = () => {
             </div>
             <div style={L.field}>
               <label style={L.label} htmlFor="login-password">
-                Password
+                {t("auth.password")}
               </label>
               <input
                 id="login-password"
@@ -147,12 +149,12 @@ const Login = () => {
                 value={credentials.password}
                 onChange={handleChange}
                 required
-                placeholder="Your password"
+                placeholder={t("auth.password")}
               />
             </div>
 
             <button type="submit" disabled={loading} style={buttonStyle}>
-              {loading ? "Signing in…" : "Sign in"}
+              {loading ? `${t("auth.signIn")}...` : t("auth.signIn")}
             </button>
           </form>
 
