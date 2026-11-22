@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, NavLink } from "react-router-dom";
 import { BRAND_HORIZONTAL_LOGO_PNG } from "../../constants/brandAssets";
+import LanguageSwitcher from "../LanguageSwitcher";
 import {
   SITE_HEADER_NAVY,
   SITE_CTA_GREEN,
@@ -246,6 +247,8 @@ const SiteHeader = () => {
               {openDrop === "login" && dropPanel(loginItems)}
             </div>
 
+            <LanguageSwitcher compact={true} style={{ marginLeft: "8px" }} />
+
             <Link
               to="/register/patient"
               className="site-cta-green"
@@ -377,6 +380,10 @@ const SiteHeader = () => {
             </Link>
           ))}
 
+          <div style={{ padding: "12px 8px", marginTop: "8px" }}>
+            <LanguageSwitcher />
+          </div>
+
           <Link
             to="/register/patient"
             onClick={closeMobile}
@@ -399,5 +406,7 @@ const SiteHeader = () => {
     </header>
   );
 };
+
+export default SiteHeader;
 
 export default SiteHeader;
