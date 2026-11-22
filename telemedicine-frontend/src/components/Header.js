@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { BRAND_HORIZONTAL_LOGO_PNG } from "../constants/brandAssets";
+import { BRAND_LOGO_HORIZONTAL_WHITE } from "../constants/brandAssets";
 import { DASHBOARD_HEADER_OFFSET_PX } from "../constants/dashboardLayout";
 import { getUserType } from "../utils/authSession";
 import LanguageSwitcher from "./LanguageSwitcher";
@@ -87,7 +87,7 @@ const Header = ({ role: roleProp, balance, onBalanceClick }) => {
     <header style={styles.header(THEME)}>
       <div style={styles.headerInner}>
         <Link to="/" style={styles.logo}>
-          <img src={BRAND_HORIZONTAL_LOGO_PNG} alt="IRME Telemedicine" style={styles.logoImg} />
+          <img src={BRAND_LOGO_HORIZONTAL_WHITE} alt="IRME Telemedicine" style={styles.logoImg} width="160" height="40" />
         </Link>
         {!compact ? (
           <nav style={styles.nav} aria-label="Main">
@@ -186,15 +186,10 @@ const styles = {
     alignItems: "center",
     minWidth: 0,
     transition: "opacity 150ms ease",
-    backgroundColor: "#ffffff",
-    borderRadius: "24px",
-    padding: "8px 16px",
-    boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
   },
   logoImg: {
-    height: 32,
-    width: "auto",
-    maxWidth: 220,
+    height: 40,
+    width: 160,
     objectFit: "contain",
     display: "block",
   },
