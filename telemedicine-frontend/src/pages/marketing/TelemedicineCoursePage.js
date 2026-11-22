@@ -7,6 +7,7 @@ import LeadCaptureForm from "../../components/marketing/LeadCaptureForm";
 import { m } from "../../constants/marketingLayout";
 import { seoCities, seoStates } from "../../data/seoLocations";
 import { whatsappUrl } from "../../constants/marketingContact";
+import "../../styles/marketingResponsive.css";
 
 const main = {
   flex: 1,
@@ -53,20 +54,29 @@ const TelemedicineCoursePage = () => (
         ]}
       />
 
-      <section style={m.hero}>
-        <h1 style={m.heroH1}>Telemedicine Assistant Certificate Course</h1>
-        <p style={m.heroLead}>
-          Learn telemedicine support and digital health operations. Build practical skills to
-          support online doctor consultations, patient coordination, and rural healthcare access—
-          as a trained assistant, not a substitute for licensed clinical care.
-        </p>
-        <div style={m.heroCtas}>
-          <a href="#inquiry" className="site-cta-green" style={m.btnPrimary}>
-            Apply Now
-          </a>
-          <a href={whatsappUrl("I want details for the 3 months Telemedicine Assistant Certificate Course.")} className="site-cta-ghost" style={m.btnSecondary}>
-            WhatsApp Counsellor
-          </a>
+      <section className="marketing-hero-with-image" style={{...m.hero, ...m.heroWithImage}}>
+        <div style={m.heroContent}>
+          <h1 style={m.heroH1}>Telemedicine Assistant Certificate Course</h1>
+          <p style={m.heroLead}>
+            Learn telemedicine support and digital health operations. Build practical skills to
+            support online doctor consultations, patient coordination, and rural healthcare access—
+            as a trained assistant, not a substitute for licensed clinical care.
+          </p>
+          <div style={m.heroCtas}>
+            <a href="#inquiry" className="site-cta-green" style={m.btnPrimary}>
+              Apply Now
+            </a>
+            <a href={whatsappUrl("I want details for the 3 months Telemedicine Assistant Certificate Course.")} className="site-cta-ghost" style={m.btnSecondary}>
+              WhatsApp Counsellor
+            </a>
+          </div>
+        </div>
+        <div className="marketing-hero-image" style={m.heroImage}>
+          <img 
+            src="/images/training-classroom.jpg" 
+            alt="Medical training and telemedicine education"
+            style={m.heroImageImg}
+          />
         </div>
       </section>
 

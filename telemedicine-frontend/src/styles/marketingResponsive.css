@@ -1,0 +1,13 @@
+/* Marketing Pages Responsive Styles */
+
+@media (max-width: 768px) {
+  /* Make hero images stack on mobile */
+  .marketing-hero-with-image {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .marketing-hero-image {
+    min-height: 200px !important;
+    max-height: 300px !important;
+  }
+}

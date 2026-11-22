@@ -20,25 +20,28 @@ const floatCards = [
 const btnPrimary = {
   textDecoration: "none",
   backgroundColor: SITE_CTA_GREEN,
-  color: "#052e16",
-  fontWeight: 700,
-  padding: "12px 18px",
+  color: "#ffffff",
+  fontWeight: 600,
+  padding: "14px 24px",
   borderRadius: "10px",
-  fontSize: "14px",
+  fontSize: "16px",
   display: "inline-block",
   border: "none",
+  boxShadow: "0 1px 3px rgba(0, 0, 0, 0.15)",
+  transition: "background 150ms ease, box-shadow 150ms ease",
 };
 
 const btnGhost = {
   textDecoration: "none",
-  border: "2px solid rgba(255,255,255,0.85)",
+  border: "2px solid rgba(255,255,255,0.8)",
   color: "#ffffff",
-  fontWeight: 700,
-  padding: "10px 16px",
+  fontWeight: 600,
+  padding: "12px 22px",
   borderRadius: "10px",
-  fontSize: "14px",
+  fontSize: "16px",
   display: "inline-block",
-  background: "rgba(255,255,255,0.08)",
+  background: "rgba(255,255,255,0.1)",
+  transition: "background 150ms ease, border-color 150ms ease",
 };
 
 const HeroSection = () => (
@@ -50,23 +53,24 @@ const HeroSection = () => (
             id="home-hero-heading"
             style={{
               margin: 0,
-              fontSize: "clamp(1.55rem, 4.5vw, 2.35rem)",
-              lineHeight: 1.18,
-              fontWeight: 800,
+              fontSize: "clamp(1.75rem, 5vw, 2.5rem)",
+              lineHeight: 1.2,
+              fontWeight: 700,
               letterSpacing: "-0.02em",
-              textShadow: "0 1px 2px rgba(0,0,0,0.15)",
+              textShadow: "0 1px 2px rgba(0,0,0,0.1)",
             }}
           >
             Strengthening Rural Healthcare Through Telemedicine Centers
           </h1>
           <p
             style={{
-              marginTop: "16px",
-              fontSize: "clamp(15px, 2.5vw, 17px)",
-              lineHeight: 1.7,
+              marginTop: "20px",
+              fontSize: "clamp(16px, 2.5vw, 18px)",
+              lineHeight: 1.65,
               maxWidth: "36rem",
-              opacity: 0.96,
-              textShadow: "0 1px 2px rgba(0,0,0,0.12)",
+              opacity: 0.95,
+              textShadow: "0 1px 2px rgba(0,0,0,0.08)",
+              fontWeight: 400,
             }}
           >
             IRME Telemedicine connects patients with verified doctors through assisted{" "}
@@ -75,10 +79,10 @@ const HeroSection = () => (
           </p>
           <div
             style={{
-              marginTop: "22px",
+              marginTop: "28px",
               display: "flex",
               flexWrap: "wrap",
-              gap: "10px",
+              gap: "14px",
               alignItems: "center",
             }}
           >

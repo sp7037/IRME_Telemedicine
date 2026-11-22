@@ -1,3 +1,15 @@
+/* ============================================================================
+   IRME Telemedicine - Global Styles
+   Modern, clean, accessible healthcare design
+   ============================================================================ */
+
+/* CSS Reset & Base Styles */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
@@ -5,6 +17,9 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  line-height: 1.5;
+  color: #10243e;
+  background-color: #f8fafb;
 }
 
 code {
@@ -12,37 +27,165 @@ code {
     monospace;
 }
 
-/* Registration / auth fields — focus ring aligned with IRME theme */
+/* Smooth scroll behavior */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Focus visible for accessibility */
+*:focus-visible {
+  outline: 2px solid #1f76d8;
+  outline-offset: 2px;
+}
+
+/* Remove focus outline for mouse users, keep for keyboard users */
+*:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Images */
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Links */
+a {
+  color: #1762bf;
+  text-decoration: none;
+  transition: color 150ms ease;
+}
+
+a:hover {
+  color: #0f4c81;
+}
+
+/* Buttons */
+button {
+  font-family: inherit;
+  line-height: inherit;
+}
+
+/* Forms */
+input,
+textarea,
+select {
+  font-family: inherit;
+  line-height: inherit;
+}
+
+/* ============================================================================
+   Authentication Forms - Improved consistency and accessibility
+   ============================================================================ */
+
 .auth-input,
-.auth-select {
+.auth-select,
+.auth-textarea {
   width: 100%;
   box-sizing: border-box;
-  height: 44px;
+  min-height: 44px;
   border-radius: 10px;
   border: 1px solid #c6d7eb;
   padding: 0 14px;
   font-size: 15px;
   color: #10243e;
   background-color: #fbfdff;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
+}
+
+.auth-textarea {
+  padding: 12px 14px;
+  min-height: 100px;
+  resize: vertical;
+  line-height: 1.5;
 }
 
 .auth-select {
   cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%234c6480' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 40px;
 }
 
-.auth-input::placeholder {
+.auth-input::placeholder,
+.auth-textarea::placeholder {
   color: #8a9eb4;
+  opacity: 1;
+}
+
+.auth-input:hover:not(:focus):not(:disabled),
+.auth-select:hover:not(:focus):not(:disabled),
+.auth-textarea:hover:not(:focus):not(:disabled) {
+  border-color: #a0aec0;
+  background-color: #ffffff;
 }
 
 .auth-input:focus,
-.auth-select:focus {
+.auth-select:focus,
+.auth-textarea:focus {
   outline: none;
   border-color: #1f76d8;
-  box-shadow: 0 0 0 3px rgba(31, 118, 216, 0.22);
+  box-shadow: 0 0 0 3px rgba(31, 118, 216, 0.15);
+  background-color: #ffffff;
 }
 
-.auth-input:hover:not(:focus),
-.auth-select:hover:not(:focus) {
-  border-color: #a8c0df;
+.auth-input:disabled,
+.auth-select:disabled,
+.auth-textarea:disabled {
+  background-color: #f0f4f8;
+  color: #718096;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.auth-input.error,
+.auth-select.error,
+.auth-textarea.error {
+  border-color: #ef4444;
+}
+
+.auth-input.error:focus,
+.auth-select.error:focus,
+.auth-textarea.error:focus {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+}
+
+/* ============================================================================
+   Utility Classes
+   ============================================================================ */
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+.text-balance {
+  text-wrap: balance;
+}
+
+/* ============================================================================
+   Print Styles
+   ============================================================================ */
+
+@media print {
+  body {
+    background: white;
+  }
+  
+  header,
+  footer,
+  nav,
+  .no-print {
+    display: none !important;
+  }
 }
