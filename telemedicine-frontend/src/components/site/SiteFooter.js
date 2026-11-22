@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { BRAND_HORIZONTAL_LOGO_PNG } from "../../constants/brandAssets";
+import { BRAND_LOGO_HORIZONTAL_WHITE } from "../../constants/brandAssets";
 import { SITE_HEADER_NAVY, SITE_TEAL, BRAND_ACCENT } from "../../constants/brandTheme";
 
 const footerColTitle = {
@@ -42,12 +42,13 @@ const SiteFooter = () => {
       >
         <div>
           <img
-            src={BRAND_HORIZONTAL_LOGO_PNG}
-            alt=""
+            src={BRAND_LOGO_HORIZONTAL_WHITE}
+            alt="IRME Telemedicine"
+            width="200"
+            height="50"
             style={{
-              height: "40px",
-              width: "auto",
-              maxWidth: "260px",
+              height: "50px",
+              width: "200px",
               objectFit: "contain",
               marginBottom: "12px",
             }}

@@ -1,8 +1,11 @@
 /**
- * Brand colors sampled from `irme_hostizontal_topmenu_logo.png` background (#002043).
+ * Brand colors - New IRME Logo (i + heartbeat mark)
+ * Navy #0B2545 (primary) | Teal #13A89E (accent)
  * Use these for nav, footer, and theme meta so UI matches the logo.
  */
-export const BRAND_NAVY = "#002043";
+export const BRAND_NAVY = "#0B2545"; // New official navy
+export const BRAND_TEAL = "#13A89E"; // New official teal accent
+export const BRAND_NAVY_LEGACY = "#002043"; // Legacy navy for gradual transition
 /** Darker shade for gradient endpoints and footer depth */
 export const BRAND_NAVY_DEEP = "#001018";
 /** Mid blue for gradients (matches existing secondary blues) */

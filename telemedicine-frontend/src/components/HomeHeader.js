@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { BRAND_HORIZONTAL_LOGO_PNG } from "../constants/brandAssets";
+import { BRAND_LOGO_HORIZONTAL_WHITE } from "../constants/brandAssets";
 import { BRAND_NAVY } from "../constants/brandTheme";
 
 /**
@@ -10,13 +10,13 @@ const HomeHeader = () => {
   return (
     <header style={styles.topbar}>
       <Link to="/" style={styles.brandLink}>
-        <div style={styles.brandBlock}>
-          <img
-            src={BRAND_HORIZONTAL_LOGO_PNG}
-            alt="IRME Institute — Telemedicine: Rural India Deserves Best Medical Health Services"
-            style={styles.brandLogo}
-          />
-        </div>
+        <img
+          src={BRAND_LOGO_HORIZONTAL_WHITE}
+          alt="IRME Telemedicine"
+          style={styles.brandLogo}
+          width="200"
+          height="50"
+        />
       </Link>
       <div style={styles.topActions}>
         <Link to="/login" style={styles.ghostButton}>
@@ -50,20 +50,13 @@ const styles = {
     textDecoration: "none",
     color: "inherit",
     transition: "opacity 150ms ease",
-  },
-  brandBlock: {
     display: "inline-flex",
     alignItems: "center",
-    backgroundColor: "#ffffff",
-    borderRadius: "28px",
-    padding: "12px 20px",
-    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.12)",
   },
   brandLogo: {
     display: "block",
-    height: "44px",
-    width: "auto",
-    maxWidth: "min(380px, 85vw)",
+    height: "50px",
+    width: "200px",
     objectFit: "contain",
   },
   tagline: {

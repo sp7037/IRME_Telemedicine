@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, NavLink } from "react-router-dom";
-import { BRAND_HORIZONTAL_LOGO_PNG } from "../../constants/brandAssets";
+import { BRAND_LOGO_HORIZONTAL_WHITE } from "../../constants/brandAssets";
 import LanguageSwitcher from "../LanguageSwitcher";
 import {
   SITE_HEADER_NAVY,
@@ -131,10 +131,12 @@ const SiteHeader = () => {
         >
           <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
             <img
-              src={BRAND_HORIZONTAL_LOGO_PNG}
+              src={BRAND_LOGO_HORIZONTAL_WHITE}
               alt="IRME Telemedicine"
+              width={isMobile ? "160" : "200"}
+              height={isMobile ? "40" : "50"}
               style={{
-                height: isMobile ? "40px" : "46px",
+                height: isMobile ? "40px" : "50px",
                 width: "auto",
                 maxWidth: "min(340px, 70vw)",
                 objectFit: "contain",
