@@ -408,5 +408,3 @@ const SiteHeader = () => {
 };
 
 export default SiteHeader;
-
-export default SiteHeader;
