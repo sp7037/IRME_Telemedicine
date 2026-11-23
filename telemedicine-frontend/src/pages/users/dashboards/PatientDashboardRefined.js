@@ -9,7 +9,7 @@ import Sidebar from "../../../components/Sidebar";
 import StatusBadge from "../../../components/dashboard/StatusBadge";
 import ConsultationDetailModal from "../../../components/dashboard/ConsultationDetailModal";
 import ConsultationChatPanel from "../../../components/dashboard/ConsultationChatPanel";
-import { getStatusMessage, getAvailableActions, getPostponementExplanation } from "../../../utils/consultationStatus";
+import { getStatusMessage } from "../../../utils/consultationStatus";
 import { StaleNotification } from "../../../components/dashboard/InlineNotification";
 import {
   getUserProfile,

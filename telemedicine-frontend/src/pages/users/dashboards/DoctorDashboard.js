@@ -16,7 +16,6 @@ import ConsultationDetailModal from "../../../components/dashboard/ConsultationD
 import ConsultationChatPanel from "../../../components/dashboard/ConsultationChatPanel";
 import { getStatusMessage } from "../../../utils/consultationStatus";
 import { StaleNotification, LoadingNotification } from "../../../components/dashboard/InlineNotification";
-import { useConsultationRefresh } from "../../../hooks/useConsultationRefresh";
 import {
   DoctorProfilePanel,
   DoctorAvailabilityPanel,
