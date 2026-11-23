@@ -18,8 +18,6 @@ export default function PatientBookingReview({ preview, doctor, busy, onConfirm,
   const doctorPhoto = doctor?.photo || null;
   const initial = (firstName || lastName || doctorName.replace(/^Dr\.\s*/i, "") || "D").charAt(0).toUpperCase();
 
-  const baseFee = Number(preview.base_fee) || 0;
-  const platformCharge = Number(preview.platform_fee) || 0;
   const total = Number(preview.total) || 0;
   const balance = Number(preview.balance) || 0;
   const balanceAfter = balance - total;

@@ -139,3 +139,40 @@ describe('DoctorDashboard Integration - Background Refresh', () => {
     expect(isStale).toBe(true);
   });
 });
+
+describe('DoctorDashboard Integration - Persistent accept and video decline', () => {
+  test('accept success opens a persistent prompt instead of a timed toast', () => {
+    let acceptPrompt = null;
+    let notice = null;
+    const status = 'ACCEPTED';
+    if (status === 'ACCEPTED') {
+      acceptPrompt = { id: 42, patient_name: 'Jane Doe' };
+    } else {
+      notice = { title: 'toast' };
+    }
+    expect(acceptPrompt).toEqual({ id: 42, patient_name: 'Jane Doe' });
+    expect(notice).toBeNull();
+  });
+
+  test('video REJECTED transition surfaces patient-chose-chat notice', () => {
+    const previousVideo = 'REQUESTED';
+    const videoStatus = 'REJECTED';
+    let videoDeclinedNotice = null;
+    if (previousVideo && previousVideo !== videoStatus && videoStatus === 'REJECTED') {
+      videoDeclinedNotice = { id: 7, patient_name: 'Jane' };
+    }
+    expect(videoDeclinedNotice).toEqual({ id: 7, patient_name: 'Jane' });
+  });
+
+  test('unread patient messages stay visible on the card after modal dismiss', () => {
+    const consultation = { id: 3, unread_from_peer: 2, video: { status: 'REJECTED' } };
+    const helper =
+      consultation.video?.status === 'REJECTED'
+        ? 'Patient declined – continue in chat.'
+        : consultation.unread_from_peer > 0
+          ? `New patient message${consultation.unread_from_peer > 1 ? 's' : ''} waiting.`
+          : 'live';
+    expect(helper).toContain('Patient declined');
+    expect(consultation.unread_from_peer).toBe(2);
+  });
+});

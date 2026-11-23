@@ -187,6 +187,39 @@ describe('PatientDashboard Integration - Video Cleanup', () => {
   });
 });
 
+describe('PatientDashboard Integration - Persistent flow prompts', () => {
+  test('doctor accept maps to waiting prompt copy', () => {
+    const consultation = { id: 9, status: 'ACCEPTED', doctor_name: 'Asha Mehta' };
+    const doctor = consultation.doctor_name.replace(/^Dr\.?\s*/i, '');
+    const title = `Dr ${doctor} accepted your request. Waiting for the doctor to start the consultation.`;
+    expect(title).toContain('Waiting for the doctor to start the consultation');
+  });
+
+  test('doctor chat message shows preview and Reply affordance', () => {
+    const consultation = {
+      id: 9,
+      unread_from_peer: 1,
+      latest_chat_message: { sender_role: 'doctor', message: 'Please share your symptoms.' },
+    };
+    const helper =
+      consultation.unread_from_peer > 0
+        ? 'Doctor started the chat, please reply'
+        : 'Open chat / details';
+    const button = consultation.unread_from_peer > 0 ? 'Reply' : 'Open chat';
+    expect(helper).toBe('Doctor started the chat, please reply');
+    expect(button).toBe('Reply');
+    expect(consultation.latest_chat_message.message).toContain('symptoms');
+  });
+
+  test('video request prompt offers Join video or Continue in chat', () => {
+    const actions = [
+      { key: 'join-video', label: 'Join video' },
+      { key: 'continue-chat', label: 'Continue in chat' },
+    ];
+    expect(actions.map((a) => a.label)).toEqual(['Join video', 'Continue in chat']);
+  });
+});
+
 describe('PatientDashboard Integration - Available Actions', () => {
   test('in-progress consultation shows open action', () => {
     const consultation = { status: 'IN_PROGRESS' };

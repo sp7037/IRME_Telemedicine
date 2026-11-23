@@ -101,16 +101,15 @@ const ConsultationDetailModal = ({
     };
   }, []);
 
-  if (!consultation) return null;
-
-  const applyVideoState = (next) => {
+  const applyVideoState = useCallback((next) => {
     setVideoState(next);
     if (typeof onVideoStateChange === "function") {
       onVideoStateChange(next, consultation);
     }
-  };
+  }, [consultation, onVideoStateChange]);
 
-  const requestVideo = async () => {
+  const requestVideo = useCallback(async () => {
+    if (!consultation?.id) return;
     setVideoError("");
     setVideoLoading(true);
     try {
@@ -122,9 +121,10 @@ const ConsultationDetailModal = ({
     } finally {
       setVideoLoading(false);
     }
-  };
+  }, [applyVideoState, consultation?.id]);
 
-  const respondVideo = async (action) => {
+  const respondVideo = useCallback(async (action) => {
+    if (!consultation?.id) return;
     setVideoError("");
     setVideoLoading(true);
     try {
@@ -136,9 +136,10 @@ const ConsultationDetailModal = ({
     } finally {
       setVideoLoading(false);
     }
-  };
+  }, [applyVideoState, consultation?.id]);
 
-  const openVideo = async () => {
+  const openVideo = useCallback(async () => {
+    if (!consultation?.id) return;
     setVideoOpen(true);
     setVideoError("");
     if (videoJoin?.consultation_id === consultation.id) return;
@@ -151,7 +152,7 @@ const ConsultationDetailModal = ({
     } finally {
       setVideoLoading(false);
     }
-  };
+  }, [consultation?.id, videoJoin?.consultation_id]);
 
   useEffect(() => {
     if (!autoRequestVideo || !consultation?.id || viewerRole !== "doctor") return;
@@ -168,6 +169,8 @@ const ConsultationDetailModal = ({
     // Intentionally run when parent asks to join after accept
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoOpenVideo, consultation?.id, videoState?.status]);
+
+  if (!consultation) return null;
 
   const renderVideoActions = () => {
     const status = videoState?.status || "NONE";

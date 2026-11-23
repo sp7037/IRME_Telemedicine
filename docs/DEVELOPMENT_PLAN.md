@@ -6,13 +6,15 @@ Completed before deployment preparation: server-controlled prices, TMC wallet ow
 
 Deployment preparation: supported Django 5.2 LTS and locked dependencies; one Docker image with React and Gunicorn; same-origin /api/ and /api/admin/ routes; HTTPS/SSL fail-closed settings; protected private S3 uploads; serialised startup migrations; optional first-admin creation without password reset. No financial tables or migration sources were added/rewritten.
 
-Consultation experience improvements (2026-11-23): implemented consistent status presentation, background refresh with stale-response prevention, video lifecycle cleanup on completion, and inline feedback replacing browser alerts. All 4 parts complete: DoctorDashboard, ConsultationDetailModal, PatientDashboard, and TMCDashboard fully integrated with shared helpers, action guards, terminal-state video cleanup, and status display. All 112 tests passing (29 consultationStatus + 24 videoLifecycle + 10 DoctorDashboard + 11 ConsultationDetailModal + 17 PatientDashboard + 29 TMCDashboard + 12 existing), production build successful with 2 baseline warnings only. Backend tests require environment setup. See "Consultation Status Improvements" section below for details.
+Consultation experience improvements (2026-11-23): implemented consistent status presentation, background refresh with stale-response prevention, video lifecycle cleanup on completion, and inline feedback replacing browser alerts. All 4 parts complete: DoctorDashboard, ConsultationDetailModal, PatientDashboard, and TMCDashboard fully integrated with shared helpers, action guards, terminal-state video cleanup, and status display.
+
+Consultation flow UX (2026-11-23, PR targeting `codex/aiccloud-staging-20261121`): persistent acceptance/chat/video prompts, redesigned patient payment review (frontend doctor summary; preview money values unchanged), participant-safe video unavailable messaging, and narrow history fields for latest chat / unread counts. No WebSockets/Redis/Celery/push. No wallet/fee/settlement changes. No migrations. See "Consultation Flow UX" section below.
 
 Verification: see AIC_CLOUD_DEPLOYMENT.md and GitHub Deployment checks for this exact commit. Local release verification and public CI results are separate. The ordinary local database, running environments and Git staging were preserved. Recovery copies and case-specific financial evidence remain private and are not shipped in this public release.
 
 Pending: external database/bucket provisioning, live DNS/TLS/proxy configuration, SMTP/video/payment integration tests, database and upload restore tests, full staged user acceptance, and production sign-off. Direct patient gateway checkout, monthly quotas, commission/payable/settlement redesign, journal activation are separate unfinished work. The first dormant G1A table remains a reviewed proposal, not an implementation.
 
-Next: configure external services and verify the staging deployment without real medical records. Follow AIC_CLOUD_DEPLOYMENT.md. Do not start additional financial phases incidentally.
+Next: configure external services (including Cloudflare video when ready) and verify the staging deployment without real medical records. Follow AIC_CLOUD_DEPLOYMENT.md. Do not start additional financial phases incidentally.
 
 ---
 
@@ -281,3 +283,53 @@ npm run build
 - [ ] Mobile (360px width) → verify status messages readable
 - [ ] Desktop → verify consultation cards layout
 - [ ] Scheduled times show date, time, and "IST" timezone explicitly
+
+---
+
+## Consultation Flow UX
+
+**Date:** 2026-11-23  
+**Branch:** `cursor/consultation-flow-ux-improvements-e545`  
+**Base:** `codex/aiccloud-staging-20261121` (includes PR #9)  
+**Status:** Complete for the five requested items
+
+### Changes
+
+1. **Patient payment review** — branded card with doctor summary from the selected doctor card (photo/name/specialty), fee breakdown, current and after-payment balance, acceptance note, Confirm / Add funds / Cancel with loading/disabled states. Preview endpoint and money math unchanged.
+2. **Doctor accept modal** — centered persistent modal (Open chat / Start video / Close) replaces the short-lived toast; cards stay actionable with video/unread tags.
+3. **Patient after accept** — persistent waiting prompt; updates when doctor starts chat or requests video; chat openable anytime.
+4. **Chat started / unread** — patient card/prompt: “Doctor started the chat, please reply”, latest doctor message preview, Reply focuses chat input; unread badges for both patient and doctor when chat is closed.
+5. **Video clarity** — patient centered modal for requests (Join video / Continue in chat); doctor persistent notice on decline; explicit waiting/accepted/declined states; participant-facing “Video is temporarily unavailable. Please continue in chat.” with no raw `CLOUDFLARE_*` keys (staff may still see config; details logged server-side).
+
+### Backend (narrow, no migrations)
+
+- `latest_chat_message` and `unread_from_peer` on consultation history (request-scoped)
+- Opening chat history marks peer messages read
+- `client_video_error_payload` for participant-safe video errors
+
+### Verification (actual)
+
+Frontend:
+- `npm ci --no-audit --no-fund`
+- `npm test -- --watchAll=false` → **127/127 passed** (12 suites)
+- `npm run build` → **success** (2 baseline exhaustive-deps warnings in ConsultationDetailModal)
+
+Backend (disposable local PostgreSQL test DB, not production):
+- `python manage.py test consultations.tests.test_consultation_flow_ux` → **6/6 passed**
+
+### Limitations
+
+- Polling delay of a few seconds (Doctor/Patient ~8s); no WebSockets/Redis/Celery/push
+- Cloudflare video credentials may still be unset in production; join fails with the friendly message and chat remains usable
+
+### Owner testing checklist (this phase)
+
+- [ ] Patient: Review fee & consult → card shows doctor + same fee/balance values; Confirm books as before
+- [ ] Payment review usable at 360px and desktop
+- [ ] Doctor: Accept → modal stays until Open chat / Start video / Close; card still actionable after Close
+- [ ] Patient: After accept → waiting prompt; updates when doctor chats or requests video
+- [ ] Patient: Doctor message → preview + Reply focuses chat; unread badge when chat closed
+- [ ] Doctor: unread badge for new patient messages
+- [ ] Doctor: Request video → patient modal with Join video / Continue in chat
+- [ ] Patient declines video → doctor sees “Patient chose to continue in chat” with Open chat / Request again
+- [ ] Missing video credentials → friendly unavailable message only (no env var names) for doctor and patient

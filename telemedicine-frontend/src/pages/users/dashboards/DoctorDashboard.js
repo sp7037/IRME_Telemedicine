@@ -105,7 +105,7 @@ const DoctorDashboard = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [acceptPrompt, setAcceptPrompt] = useState(null);
   const [videoDeclinedNotice, setVideoDeclinedNotice] = useState(null);
-  const [videoWaitingNotice, setVideoWaitingNotice] = useState(null);
+  const [, setVideoWaitingNotice] = useState(null);
   const [chatFocusToken, setChatFocusToken] = useState(0);
   const [autoRequestVideo, setAutoRequestVideo] = useState(false);
   const requestSeenRef = useRef(new Map());
