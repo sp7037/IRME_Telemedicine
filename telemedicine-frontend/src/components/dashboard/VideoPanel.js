@@ -90,7 +90,7 @@ const mergeLocalTracks = (streamRef, newTracks) => {
   return streamRef.current;
 };
 
-const VideoPanel = ({ join, consultationId, onLeave }) => {
+const VideoPanel = ({ join, consultationId, onLeave, onSessionReady }) => {
   const [credentials, setCredentials] = useState(() => normalizeCredentials(join));
   const [loadingMessage, setLoadingMessage] = useState(join ? "" : "Preparing secure video room...");
   const [error, setError] = useState("");
@@ -164,10 +164,10 @@ const VideoPanel = ({ join, consultationId, onLeave }) => {
     );
   }
 
-  return <CloudflareRoom credentials={credentials} onLeave={onLeave} />;
+  return <CloudflareRoom credentials={credentials} onLeave={onLeave} onSessionReady={onSessionReady} />;
 };
 
-const CloudflareRoom = ({ credentials, onLeave }) => {
+const CloudflareRoom = ({ credentials, onLeave, onSessionReady }) => {
   const localVideoRef = useRef(null);
   const localStreamRef = useRef(null);
   const meetingRef = useRef(null);
@@ -260,6 +260,14 @@ const CloudflareRoom = ({ credentials, onLeave }) => {
 
         updateParticipants(activeMeeting);
         setStatus("Connected. Waiting for the other participant...");
+
+        if (onSessionReady && typeof onSessionReady === "function") {
+          onSessionReady({
+            meeting: activeMeeting,
+            localStream: localStreamRef.current,
+            videoElement: localVideoEl,
+          });
+        }
       } catch (err) {
         if (!cancelled) {
           setStatus("");

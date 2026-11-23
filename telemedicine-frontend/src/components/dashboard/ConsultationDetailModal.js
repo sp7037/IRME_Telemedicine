@@ -3,8 +3,9 @@ import StatusBadge from "./StatusBadge";
 import ConsultationTimeline from "./ConsultationTimeline";
 import VideoPanel from "./VideoPanel";
 import { getConsultationVideoJoin, requestConsultationVideo, respondConsultationVideo } from "../../api/users";
-import { isTerminalStatus } from "../../utils/consultationStatus";
-import { shouldCloseVideo, shouldClearCredentials } from "../../utils/videoLifecycle";
+import { isTerminalStatus, getStatusMessage } from "../../utils/consultationStatus";
+import { shouldCloseVideo, shouldClearCredentials, cleanupVideoSession } from "../../utils/videoLifecycle";
+import InlineNotification from "./InlineNotification";
 
 const ConsultationDetailModal = ({ consultation, events, onClose, actions, children, viewerRole = "patient" }) => {
   const [minimized, setMinimized] = useState(false);
@@ -15,6 +16,7 @@ const ConsultationDetailModal = ({ consultation, events, onClose, actions, child
   const [videoError, setVideoError] = useState("");
   const [videoState, setVideoState] = useState(consultation?.video || { status: "NONE" });
   const previousStatusRef = useRef(null);
+  const videoSessionRef = useRef(null);
 
   useEffect(() => {
     setVideoState(consultation?.video || { status: "NONE" });
@@ -31,6 +33,12 @@ const ConsultationDetailModal = ({ consultation, events, onClose, actions, child
       : consultation?.status;
 
     if (shouldCloseVideo(consultation, previousStatusRef.current)) {
+      if (videoSessionRef.current) {
+        cleanupVideoSession(videoSessionRef.current).catch((err) => {
+          console.warn("Video cleanup error:", err);
+        });
+        videoSessionRef.current = null;
+      }
       setVideoOpen(false);
       setVideoJoin(null);
       setVideoError("");
@@ -44,12 +52,28 @@ const ConsultationDetailModal = ({ consultation, events, onClose, actions, child
   }, [consultation?.status, consultation?.follow_up?.active_status]);
 
   useEffect(() => {
+    if (videoSessionRef.current) {
+      cleanupVideoSession(videoSessionRef.current).catch((err) => {
+        console.warn("Video cleanup on consultation switch:", err);
+      });
+      videoSessionRef.current = null;
+    }
     setVideoState(consultation?.video || { status: "NONE" });
     setVideoJoin(null);
     setVideoOpen(false);
     setVideoError("");
     previousStatusRef.current = null;
   }, [consultation?.id]);
+
+  useEffect(() => {
+    return () => {
+      if (videoSessionRef.current) {
+        cleanupVideoSession(videoSessionRef.current).catch((err) => {
+          console.warn("Video cleanup on unmount:", err);
+        });
+      }
+    };
+  }, []);
 
   if (!consultation) return null;
 
@@ -189,6 +213,17 @@ const ConsultationDetailModal = ({ consultation, events, onClose, actions, child
         </div>
 
         <div style={styles.scrollBody}>
+          {(() => {
+            const statusMsg = getStatusMessage(consultation, viewerRole);
+            return statusMsg ? (
+              <InlineNotification
+                type={statusMsg.severity}
+                title={statusMsg.title}
+                message={statusMsg.message}
+              />
+            ) : null;
+          })()}
+
           <div style={styles.infoGrid}>
             <Info label="Doctor" value={consultation.doctor_name} />
             <Info label="Patient" value={consultation.patient_name} />
@@ -232,7 +267,11 @@ const ConsultationDetailModal = ({ consultation, events, onClose, actions, child
             ) : videoError ? (
               <div style={styles.videoError}>{videoError}</div>
             ) : videoJoin ? (
-              <VideoPanel join={videoJoin} onLeave={() => setVideoOpen(false)} />
+              <VideoPanel 
+                join={videoJoin} 
+                onLeave={() => setVideoOpen(false)}
+                onSessionReady={(session) => { videoSessionRef.current = session; }}
+              />
             ) : null
           ) : null}
 
