@@ -402,7 +402,9 @@ const PatientDashboardRefined = () => {
     }
   };
 
-  const reviewConsultation = async (doctorId) => {
+  const reviewConsultation = async (doctor) => {
+    const doctorId = typeof doctor === "object" ? doctor.id : doctor;
+    const doctorCard = typeof doctor === "object" ? doctor : doctors.find((d) => String(d.id) === String(doctorId));
     setBusy(true);
     setBookError("");
     setBookingReview(null);
@@ -410,7 +412,7 @@ const PatientDashboardRefined = () => {
       const response = await axios.get(`${API_BASE_URL}/consultations/book-consultation/preview/`, {
         params: { doctor_id: doctorId }, headers: { Authorization: `Bearer ${getAccessToken()}` },
       });
-      setBookingReview(response.data);
+      setBookingReview({ ...response.data, doctor: doctorCard || null });
     } catch (err) {
       setBookError(formatBookingError(err));
     } finally {
@@ -858,7 +860,7 @@ const PatientDashboardRefined = () => {
                 <small>Review the full fee, including any platform charge, before confirming.</small>
               </div>
             </div>
-            <button disabled={busy} style={styles.primaryBtn} onClick={() => reviewConsultation(d.id)}>
+            <button disabled={busy} style={styles.primaryBtn} onClick={() => reviewConsultation(d)}>
               Review fee & consult
             </button>
           </div>
@@ -1063,9 +1065,14 @@ const PatientDashboardRefined = () => {
           </button>
           {walletExpanded ? renderWalletAndOverview() : null}
           <div ref={paymentReviewRef}>
-            <PatientBookingReview preview={bookingReview} busy={busy}
+            <PatientBookingReview
+              preview={bookingReview}
+              doctor={bookingReview?.doctor}
+              busy={busy}
               onConfirm={() => bookingReview?.can_request && requestConsultation(bookingReview.doctor_id, bookingReview.total)}
-              onCancel={() => setBookingReview(null)} onFunds={() => setWalletExpanded(true)} />
+              onCancel={() => setBookingReview(null)}
+              onFunds={() => setWalletExpanded(true)}
+            />
           </div>
           {renderMain()}
         </main>
