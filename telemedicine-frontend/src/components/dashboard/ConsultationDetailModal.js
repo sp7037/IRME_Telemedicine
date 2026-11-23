@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import StatusBadge from "./StatusBadge";
 import ConsultationTimeline from "./ConsultationTimeline";
 import VideoPanel from "./VideoPanel";
@@ -18,6 +18,15 @@ const ConsultationDetailModal = ({ consultation, events, onClose, actions, child
   const previousStatusRef = useRef(null);
   const videoSessionRef = useRef(null);
 
+  const consultationStatus = useMemo(() => ({
+    status: consultation?.status,
+    follow_up: consultation?.follow_up,
+  }), [consultation?.status, consultation?.follow_up]);
+
+  const handleSessionReady = useCallback((session) => {
+    videoSessionRef.current = session;
+  }, []);
+
   useEffect(() => {
     setVideoState(consultation?.video || { status: "NONE" });
   }, [
@@ -28,11 +37,11 @@ const ConsultationDetailModal = ({ consultation, events, onClose, actions, child
   ]);
 
   useEffect(() => {
-    const currentEffectiveStatus = consultation?.follow_up?.active_status === "IN_PROGRESS"
+    const currentEffectiveStatus = consultationStatus.follow_up?.active_status === "IN_PROGRESS"
       ? "IN_PROGRESS"
-      : consultation?.status;
+      : consultationStatus.status;
 
-    if (shouldCloseVideo(consultation, previousStatusRef.current)) {
+    if (shouldCloseVideo(consultationStatus, previousStatusRef.current)) {
       if (videoSessionRef.current) {
         cleanupVideoSession(videoSessionRef.current).catch((err) => {
           console.warn("Video cleanup error:", err);
@@ -44,12 +53,12 @@ const ConsultationDetailModal = ({ consultation, events, onClose, actions, child
       setVideoError("");
     }
 
-    if (shouldClearCredentials(consultation)) {
+    if (shouldClearCredentials(consultationStatus)) {
       setVideoJoin(null);
     }
 
     previousStatusRef.current = currentEffectiveStatus;
-  }, [consultation?.status, consultation?.follow_up?.active_status]);
+  }, [consultationStatus]);
 
   useEffect(() => {
     if (videoSessionRef.current) {
@@ -63,7 +72,13 @@ const ConsultationDetailModal = ({ consultation, events, onClose, actions, child
     setVideoOpen(false);
     setVideoError("");
     previousStatusRef.current = null;
-  }, [consultation?.id]);
+  }, [
+    consultation?.id,
+    consultation?.video?.id,
+    consultation?.video?.status,
+    consultation?.video?.provider,
+    consultation?.video?.responded_at,
+  ]);
 
   useEffect(() => {
     return () => {
@@ -270,7 +285,7 @@ const ConsultationDetailModal = ({ consultation, events, onClose, actions, child
               <VideoPanel 
                 join={videoJoin} 
                 onLeave={() => setVideoOpen(false)}
-                onSessionReady={(session) => { videoSessionRef.current = session; }}
+                onSessionReady={handleSessionReady}
               />
             ) : null
           ) : null}

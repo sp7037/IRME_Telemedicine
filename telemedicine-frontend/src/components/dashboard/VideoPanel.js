@@ -297,7 +297,7 @@ const CloudflareRoom = ({ credentials, onLeave, onSessionReady }) => {
       }
       setMeeting(null);
     };
-  }, [credentials]);
+  }, [credentials, onSessionReady]);
 
   const toggleAudio = async () => {
     if (!meetingRef.current) return;
