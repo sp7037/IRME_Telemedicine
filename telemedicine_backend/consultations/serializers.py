@@ -1,3 +1,4 @@
+import logging
 import re
 from datetime import datetime, timedelta
 from decimal import Decimal
@@ -7,6 +8,8 @@ from django.db.models import Q
 from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.exceptions import PermissionDenied
+
+logger = logging.getLogger(__name__)
 
 from .models import (
     DoctorAvailability,
@@ -556,37 +559,56 @@ class ConsultationHistorySerializer(serializers.ModelSerializer):
             return "Consultation is live"
         return obj.get_status_display()
 
+    def _safe_finance(self, obj):
+        """Reverse OneToOne may be missing; avoid hasattr+select_related pitfalls."""
+        try:
+            return obj.finance
+        except Exception:
+            return None
+
+    def _safe_payment(self, obj):
+        try:
+            return obj.payment
+        except Exception:
+            return None
+
     def get_billing_type(self, obj):
-        if hasattr(obj, "finance"):
-            return obj.finance.billing_type
+        finance = self._safe_finance(obj)
+        if finance is not None:
+            return finance.billing_type
         return "FREE" if obj.is_free else "PAID"
 
     def get_amount_charged(self, obj):
-        if hasattr(obj, "finance"):
-            return str(obj.finance.amount_charged)
-        payment = getattr(obj, "payment", None)
-        if payment:
+        finance = self._safe_finance(obj)
+        if finance is not None:
+            return str(finance.amount_charged)
+        payment = self._safe_payment(obj)
+        if payment is not None:
             return str(payment.amount)
         return "0.00"
 
     def get_doctor_fee(self, obj):
-        if hasattr(obj, "finance"):
-            return str(obj.finance.doctor_fee)
+        finance = self._safe_finance(obj)
+        if finance is not None:
+            return str(finance.doctor_fee)
         return self.get_amount_charged(obj)
 
     def get_platform_fee(self, obj):
-        if hasattr(obj, "finance"):
-            return str(obj.finance.platform_fee)
+        finance = self._safe_finance(obj)
+        if finance is not None:
+            return str(finance.platform_fee)
         return "0.00"
 
     def get_discount_amount(self, obj):
-        if hasattr(obj, "finance"):
-            return str(obj.finance.discount_amount)
+        finance = self._safe_finance(obj)
+        if finance is not None:
+            return str(finance.discount_amount)
         return "0.00"
 
     def get_admin_subsidy_amount(self, obj):
-        if hasattr(obj, "finance"):
-            return str(obj.finance.admin_subsidy_amount)
+        finance = self._safe_finance(obj)
+        if finance is not None:
+            return str(finance.admin_subsidy_amount)
         return "0.00"
 
     def get_follow_up(self, obj):
@@ -651,51 +673,86 @@ class ConsultationHistorySerializer(serializers.ModelSerializer):
         return text[:180]
 
     def _peer_user_ids(self, obj):
-        """User IDs that count as the other party for the current viewer."""
-        request = self.context.get("request")
-        user = getattr(request, "user", None) if request else None
-        patient_id = obj.patient.user_id
-        doctor_id = obj.doctor.user_id
-        if not user or not getattr(user, "is_authenticated", False):
-            return {patient_id, doctor_id}
-        if user.id == doctor_id:
-            return {patient_id}
-        if user.id == patient_id:
-            return {doctor_id}
-        # TMC / other participant: treat both patient and doctor messages as peer activity
-        return {patient_id, doctor_id}
+        """User IDs that count as the other party for the current viewer.
+
+        Fully defensive: legacy rows may lack patient/doctor user links.
+        """
+        try:
+            request = self.context.get("request")
+            user = getattr(request, "user", None) if request else None
+            patient = getattr(obj, "patient", None)
+            doctor = getattr(obj, "doctor", None)
+            patient_id = getattr(patient, "user_id", None) if patient is not None else None
+            doctor_id = getattr(doctor, "user_id", None) if doctor is not None else None
+            peer_ids = {pid for pid in (patient_id, doctor_id) if pid is not None}
+            if not user or not getattr(user, "is_authenticated", False):
+                return peer_ids
+            if doctor_id is not None and user.id == doctor_id:
+                return {patient_id} if patient_id is not None else set()
+            if patient_id is not None and user.id == patient_id:
+                return {doctor_id} if doctor_id is not None else set()
+            # TMC / other participant: treat both patient and doctor messages as peer activity
+            return peer_ids
+        except Exception:
+            logger.exception(
+                "ConsultationHistorySerializer._peer_user_ids failed for consultation_id=%s",
+                getattr(obj, "id", None),
+            )
+            return set()
 
     def get_latest_chat_message(self, obj):
-        chats = getattr(obj, "_prefetched_objects_cache", {}).get("chats")
-        if chats is not None:
-            latest = chats[-1] if chats else None
-        else:
-            latest = obj.chats.order_by("-timestamp").first()
-        if not latest:
+        """Latest chat preview; never raise — one bad row must not 500 the list."""
+        try:
+            # Prefer an explicit query (with sender) over unordered prefetch cache.
+            latest = (
+                obj.chats.select_related("sender").order_by("-timestamp", "-id").first()
+            )
+            if not latest:
+                return None
+            doctor_user_id = getattr(getattr(obj, "doctor", None), "user_id", None)
+            patient_user_id = getattr(getattr(obj, "patient", None), "user_id", None)
+            sender_id = getattr(latest, "sender_id", None)
+            sender_role = "other"
+            if sender_id is not None and doctor_user_id is not None and sender_id == doctor_user_id:
+                sender_role = "doctor"
+            elif sender_id is not None and patient_user_id is not None and sender_id == patient_user_id:
+                sender_role = "patient"
+            sender = getattr(latest, "sender", None)
+            if sender is not None:
+                sender_name = (
+                    f"{getattr(sender, 'first_name', '') or ''} "
+                    f"{getattr(sender, 'last_name', '') or ''}"
+                ).strip() or (getattr(sender, "email", None) or "")
+            else:
+                sender_name = ""
+            return {
+                "id": latest.id,
+                "message": self._chat_preview_text(getattr(latest, "message", None)),
+                "timestamp": latest.timestamp,
+                "sender_role": sender_role,
+                "sender_name": sender_name,
+                "is_read": bool(getattr(latest, "is_read", False)),
+            }
+        except Exception:
+            logger.exception(
+                "ConsultationHistorySerializer.get_latest_chat_message failed for consultation_id=%s",
+                getattr(obj, "id", None),
+            )
             return None
-        sender_role = "other"
-        if latest.sender_id == obj.doctor.user_id:
-            sender_role = "doctor"
-        elif latest.sender_id == obj.patient.user_id:
-            sender_role = "patient"
-        return {
-            "id": latest.id,
-            "message": self._chat_preview_text(latest.message),
-            "timestamp": latest.timestamp,
-            "sender_role": sender_role,
-            "sender_name": (
-                f"{latest.sender.first_name} {latest.sender.last_name}".strip()
-                or latest.sender.email
-            ),
-            "is_read": latest.is_read,
-        }
 
     def get_unread_from_peer(self, obj):
-        peer_ids = self._peer_user_ids(obj)
-        chats = getattr(obj, "_prefetched_objects_cache", {}).get("chats")
-        if chats is not None:
-            return sum(1 for c in chats if (not c.is_read) and c.sender_id in peer_ids)
-        return obj.chats.filter(is_read=False, sender_id__in=peer_ids).count()
+        """Unread peer message count; never raise — one bad row must not 500 the list."""
+        try:
+            peer_ids = self._peer_user_ids(obj)
+            if not peer_ids:
+                return 0
+            return obj.chats.filter(is_read=False, sender_id__in=peer_ids).count()
+        except Exception:
+            logger.exception(
+                "ConsultationHistorySerializer.get_unread_from_peer failed for consultation_id=%s",
+                getattr(obj, "id", None),
+            )
+            return 0
 
 #===================================================================
 # Mark consultation status complete by doctor and cancel by patient
