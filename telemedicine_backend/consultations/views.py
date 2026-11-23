@@ -478,19 +478,23 @@ class ConsultationHistoryView(APIView):
 
         consultations = Consultation.objects.none()
 
+        # Revert to pre-PR #10 queryset shape: reverse OneToOne select_related on
+        # finance/payment is the prior baseline; avoid prefetch_related("chats") and
+        # extra user joins that interacted poorly with new chat SerializerMethodFields
+        # on legacy production rows. Chat helpers query per object defensively.
         if hasattr(user, "patient_profile"):
             consultations = Consultation.objects.filter(
                 patient=user.patient_profile
-            ).select_related("finance", "payment", "patient__user", "doctor__user").prefetch_related("chats").order_by("-created_at")
+            ).select_related("finance", "payment").order_by("-created_at")
         elif hasattr(user, "doctor_profile"):
             consultations = Consultation.objects.filter(
                 doctor=user.doctor_profile
-            ).select_related("finance", "payment", "patient__user", "doctor__user").prefetch_related("chats").order_by("-created_at")
+            ).select_related("finance", "payment").order_by("-created_at")
         elif _get_tmc_profile(user):
             tmc_profile = _get_tmc_profile(user)
             consultations = Consultation.objects.filter(
                 tmc=tmc_profile
-            ).select_related("finance", "payment", "patient__user", "doctor__user").prefetch_related("chats").order_by("-created_at")
+            ).select_related("finance", "payment").order_by("-created_at")
         else:
             return Response(
                 {"error": "User does not have a patient, doctor, or TMC profile."},
@@ -500,11 +504,25 @@ class ConsultationHistoryView(APIView):
         if not consultations.exists():
             return Response({"message": "No past consultations found."}, status=status.HTTP_200_OK)
 
-        # 🔹 Serialize the consultations using ConsultationHistorySerializer
-        serializer = ConsultationHistorySerializer(
-            consultations, many=True, context={"request": request}
-        )
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        # Serialize per consultation so one corrupt legacy row cannot 500 the list.
+        payload = []
+        for consultation in consultations:
+            try:
+                payload.append(
+                    ConsultationHistorySerializer(
+                        consultation, context={"request": request}
+                    ).data
+                )
+            except Exception:
+                logger.exception(
+                    "ConsultationHistoryView failed to serialize consultation_id=%s",
+                    getattr(consultation, "id", None),
+                )
+                continue
+
+        if not payload:
+            return Response({"message": "No past consultations found."}, status=status.HTTP_200_OK)
+        return Response(payload, status=status.HTTP_200_OK)
 
 
 
