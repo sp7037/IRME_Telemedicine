@@ -9,6 +9,8 @@ import Sidebar from "../../../components/Sidebar";
 import StatusBadge from "../../../components/dashboard/StatusBadge";
 import ConsultationDetailModal from "../../../components/dashboard/ConsultationDetailModal";
 import ConsultationChatPanel from "../../../components/dashboard/ConsultationChatPanel";
+import { getStatusMessage } from "../../../utils/consultationStatus";
+import { StaleNotification } from "../../../components/dashboard/InlineNotification";
 import {
   getUserProfile,
   patchUserProfile,
@@ -160,8 +162,11 @@ const PatientDashboardRefined = () => {
   const [bookError, setBookError] = useState("");
   const [notice, setNotice] = useState(null);
   const [followUpMsg, setFollowUpMsg] = useState("");
+  const [isStale, setIsStale] = useState(false);
   const consultationStatusRef = useRef(new Map());
   const statusReadyRef = useRef(false);
+  const selectedIdRef = useRef(null);
+  const mountedRef = useRef(true);
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(
     () => typeof window !== "undefined" && window.innerWidth < 768
@@ -237,34 +242,47 @@ const PatientDashboardRefined = () => {
   }, []);
 
   const refresh = useCallback(async () => {
-    const [docs, history, current] = await Promise.all([
-      axios.get(`${API_BASE_URL}/consultations/available-doctors/`),
-      getPatientConsultationHistory(),
-      getActiveConsultation(),
-    ]);
-    const walletData = await getPatientWalletSummary();
-    const historyList = Array.isArray(history) ? history : [];
-    const currentConsultation = current && !Array.isArray(current) && current.id ? current : null;
-    const statusSnapshot = new Map();
-    [currentConsultation, ...historyList].filter(Boolean).forEach((consultation) => {
-      statusSnapshot.set(consultation.id, consultation.status);
-      const previousStatus = consultationStatusRef.current.get(consultation.id);
-      if (statusReadyRef.current && previousStatus && previousStatus !== consultation.status) {
-        const update = statusNoticeFor(consultation);
-        if (update) showNotice(update.type, update.title, update.body);
+    const currentSelectedId = selectedIdRef.current;
+    try {
+      const [docs, history, current] = await Promise.all([
+        axios.get(`${API_BASE_URL}/consultations/available-doctors/`),
+        getPatientConsultationHistory(),
+        getActiveConsultation(),
+      ]);
+      const walletData = await getPatientWalletSummary();
+      
+      if (!mountedRef.current) return;
+      
+      const historyList = Array.isArray(history) ? history : [];
+      const currentConsultation = current && !Array.isArray(current) && current.id ? current : null;
+      const statusSnapshot = new Map();
+      [currentConsultation, ...historyList].filter(Boolean).forEach((consultation) => {
+        statusSnapshot.set(consultation.id, consultation.status);
+        const previousStatus = consultationStatusRef.current.get(consultation.id);
+        if (statusReadyRef.current && previousStatus && previousStatus !== consultation.status) {
+          const update = statusNoticeFor(consultation);
+          if (update) showNotice(update.type, update.title, update.body);
+        }
+      });
+      consultationStatusRef.current = statusSnapshot;
+      statusReadyRef.current = true;
+      setDoctors(Array.isArray(docs.data) ? docs.data : []);
+      setConsultations(historyList);
+      setActive(currentConsultation);
+      setWallet(walletData);
+      setIsStale(false);
+      
+      setSelected((prev) => {
+        if (!prev?.id || selectedIdRef.current !== currentSelectedId) return prev;
+        const updated = [currentConsultation, ...historyList].filter(Boolean).find((c) => c.id === prev.id);
+        return updated && selectedIdRef.current === prev.id ? { ...prev, ...updated } : prev;
+      });
+    } catch (err) {
+      if (mountedRef.current) {
+        setIsStale(true);
       }
-    });
-    consultationStatusRef.current = statusSnapshot;
-    statusReadyRef.current = true;
-    setDoctors(Array.isArray(docs.data) ? docs.data : []);
-    setConsultations(historyList);
-    setActive(currentConsultation);
-    setWallet(walletData);
-    setSelected((prev) => {
-      if (!prev?.id) return prev;
-      const updated = [currentConsultation, ...historyList].filter(Boolean).find((c) => c.id === prev.id);
-      return updated ? { ...prev, ...updated } : prev;
-    });
+      throw err;
+    }
   }, [showNotice, statusNoticeFor]);
 
   const loadProfileOnly = useCallback(async () => {
@@ -289,13 +307,17 @@ const PatientDashboardRefined = () => {
   }, []);
 
   useEffect(() => {
+    mountedRef.current = true;
     const onR = () => {
       const w = window.innerWidth;
       setWinW(w);
       if (w >= 768) setSidebarCollapsed(false);
     };
     window.addEventListener("resize", onR);
-    return () => window.removeEventListener("resize", onR);
+    return () => {
+      mountedRef.current = false;
+      window.removeEventListener("resize", onR);
+    };
   }, []);
 
   useEffect(() => {
@@ -425,11 +447,13 @@ const PatientDashboardRefined = () => {
   };
 
   const openDetails = async (consultation) => {
+    selectedIdRef.current = consultation.id;
     setSelected(consultation);
     const [timeline, rx] = await Promise.all([
       getConsultationEvents(consultation.id, { order: "asc" }),
       getPrescription(consultation.id),
     ]);
+    if (selectedIdRef.current !== consultation.id) return;
     setEvents(Array.isArray(timeline) ? timeline : []);
     setPrescriptionMap((prev) => ({ ...prev, [consultation.id]: rx }));
   };
@@ -1030,6 +1054,7 @@ const PatientDashboardRefined = () => {
               </button>
             </div>
           ) : null}
+          {isStale ? <StaleNotification onRetry={refresh} /> : null}
           <h1 style={styles.title}>{pageTitle}</h1>
           {subtitle ? <p style={styles.subtitle}>{subtitle}</p> : null}
           <PostponementOutcome consultation={consultations.find((c) => c.status === "REJECTED_BY_PATIENT")} role="patient" />
@@ -1046,7 +1071,15 @@ const PatientDashboardRefined = () => {
         </main>
         <Footer />
       </div>
-      <ConsultationDetailModal consultation={selected} events={events} onClose={() => setSelected(null)} viewerRole="patient">
+      <ConsultationDetailModal 
+        consultation={selected} 
+        events={events} 
+        onClose={() => { 
+          selectedIdRef.current = null;
+          setSelected(null); 
+        }} 
+        viewerRole="patient"
+      >
         {selected && selectedChatStatus === "COMPLETED" ? (
           <div style={styles.followUpBox}>
             <div>
@@ -1085,33 +1118,39 @@ const PatientDashboardRefined = () => {
   );
 };
 
-const ConsultationCard = ({ consultation, helper, actions, emphasis }) => (
-  <article style={{ ...styles.card, ...(emphasis ? styles[`card${emphasis}`] : {}) }}>
-    <div>
-      <div style={styles.rowTitle}>
-        Dr. {consultation.doctor_name}
-        {consultation.video?.status === "REQUESTED" ? <span style={styles.videoTag}>Video requested</span> : null}
-        {followUpStatusLabel(consultation) ? (
-          <span style={consultation.follow_up?.active_status === "IN_PROGRESS" ? styles.liveTag : styles.waitingTag}>
-            {followUpStatusLabel(consultation)}
-          </span>
-        ) : null}
+const ConsultationCard = ({ consultation, helper, actions, emphasis }) => {
+  const statusInfo = getStatusMessage(consultation, 'patient');
+  const displayHelper = helper || statusInfo?.message;
+  const displayEmphasis = emphasis || (statusInfo?.severity === 'urgent' ? 'urgent' : statusInfo?.severity === 'success' ? 'live' : undefined);
+
+  return (
+    <article style={{ ...styles.card, ...(displayEmphasis ? styles[`card${displayEmphasis}`] : {}) }}>
+      <div>
+        <div style={styles.rowTitle}>
+          Dr. {consultation.doctor_name}
+          {consultation.video?.status === "REQUESTED" ? <span style={styles.videoTag}>Video requested</span> : null}
+          {followUpStatusLabel(consultation) ? (
+            <span style={consultation.follow_up?.active_status === "IN_PROGRESS" ? styles.liveTag : styles.waitingTag}>
+              {followUpStatusLabel(consultation)}
+            </span>
+          ) : null}
+        </div>
+        <div style={styles.rowMeta}>
+          {consultation.formatted_time} · {consultation.consultation_type}
+        </div>
+        <div style={styles.idLine}>
+          Consultation ID: #{consultation.id}
+          {consultation.follow_up?.active_session_id ? ` | Follow-up ID: #${consultation.follow_up.active_session_id}` : ""}
+        </div>
+        <div style={{ marginTop: 6 }}>
+          <StatusBadge status={consultation.status} />
+        </div>
+        {displayHelper ? <p style={styles.helper}>{displayHelper}</p> : null}
       </div>
-      <div style={styles.rowMeta}>
-        {consultation.formatted_time} · {consultation.consultation_type}
-      </div>
-      <div style={styles.idLine}>
-        Consultation ID: #{consultation.id}
-        {consultation.follow_up?.active_session_id ? ` | Follow-up ID: #${consultation.follow_up.active_session_id}` : ""}
-      </div>
-      <div style={{ marginTop: 6 }}>
-        <StatusBadge status={consultation.status} />
-      </div>
-      {helper ? <p style={styles.helper}>{helper}</p> : null}
-    </div>
-    {actions}
-  </article>
-);
+      {actions}
+    </article>
+  );
+};
 
 const Section = ({ title, children, id }) => (
   <section style={styles.section} id={id}>

@@ -1,8 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import StatusBadge from "./StatusBadge";
 import ConsultationTimeline from "./ConsultationTimeline";
 import VideoPanel from "./VideoPanel";
 import { getConsultationVideoJoin, requestConsultationVideo, respondConsultationVideo } from "../../api/users";
+import { isTerminalStatus, getStatusMessage } from "../../utils/consultationStatus";
+import { shouldCloseVideo, shouldClearCredentials, cleanupVideoSession } from "../../utils/videoLifecycle";
+import InlineNotification from "./InlineNotification";
 
 const ConsultationDetailModal = ({ consultation, events, onClose, actions, children, viewerRole = "patient" }) => {
   const [minimized, setMinimized] = useState(false);
@@ -12,6 +15,17 @@ const ConsultationDetailModal = ({ consultation, events, onClose, actions, child
   const [videoLoading, setVideoLoading] = useState(false);
   const [videoError, setVideoError] = useState("");
   const [videoState, setVideoState] = useState(consultation?.video || { status: "NONE" });
+  const previousStatusRef = useRef(null);
+  const videoSessionRef = useRef(null);
+
+  const consultationStatus = useMemo(() => ({
+    status: consultation?.status,
+    follow_up: consultation?.follow_up,
+  }), [consultation?.status, consultation?.follow_up]);
+
+  const handleSessionReady = useCallback((session) => {
+    videoSessionRef.current = session;
+  }, []);
 
   useEffect(() => {
     setVideoState(consultation?.video || { status: "NONE" });
@@ -23,11 +37,58 @@ const ConsultationDetailModal = ({ consultation, events, onClose, actions, child
   ]);
 
   useEffect(() => {
+    const currentEffectiveStatus = consultationStatus.follow_up?.active_status === "IN_PROGRESS"
+      ? "IN_PROGRESS"
+      : consultationStatus.status;
+
+    if (shouldCloseVideo(consultationStatus, previousStatusRef.current)) {
+      if (videoSessionRef.current) {
+        cleanupVideoSession(videoSessionRef.current).catch((err) => {
+          console.warn("Video cleanup error:", err);
+        });
+        videoSessionRef.current = null;
+      }
+      setVideoOpen(false);
+      setVideoJoin(null);
+      setVideoError("");
+    }
+
+    if (shouldClearCredentials(consultationStatus)) {
+      setVideoJoin(null);
+    }
+
+    previousStatusRef.current = currentEffectiveStatus;
+  }, [consultationStatus]);
+
+  useEffect(() => {
+    if (videoSessionRef.current) {
+      cleanupVideoSession(videoSessionRef.current).catch((err) => {
+        console.warn("Video cleanup on consultation switch:", err);
+      });
+      videoSessionRef.current = null;
+    }
     setVideoState(consultation?.video || { status: "NONE" });
     setVideoJoin(null);
     setVideoOpen(false);
     setVideoError("");
-  }, [consultation?.id]);
+    previousStatusRef.current = null;
+  }, [
+    consultation?.id,
+    consultation?.video?.id,
+    consultation?.video?.status,
+    consultation?.video?.provider,
+    consultation?.video?.responded_at,
+  ]);
+
+  useEffect(() => {
+    return () => {
+      if (videoSessionRef.current) {
+        cleanupVideoSession(videoSessionRef.current).catch((err) => {
+          console.warn("Video cleanup on unmount:", err);
+        });
+      }
+    };
+  }, []);
 
   if (!consultation) return null;
 
@@ -85,6 +146,14 @@ const ConsultationDetailModal = ({ consultation, events, onClose, actions, child
 
   const renderVideoActions = () => {
     const status = videoState?.status || "NONE";
+    const consultationStatus = consultation?.follow_up?.active_status === "IN_PROGRESS"
+      ? "IN_PROGRESS"
+      : consultation?.status;
+
+    if (isTerminalStatus(consultationStatus) && consultationStatus !== "IN_PROGRESS") {
+      return null;
+    }
+
     if (viewerRole === "doctor" && consultation?.completion_required) return null;
     if (viewerRole === "doctor") {
       if (status === "ACCEPTED") {
@@ -159,6 +228,17 @@ const ConsultationDetailModal = ({ consultation, events, onClose, actions, child
         </div>
 
         <div style={styles.scrollBody}>
+          {(() => {
+            const statusMsg = getStatusMessage(consultation, viewerRole);
+            return statusMsg ? (
+              <InlineNotification
+                type={statusMsg.severity}
+                title={statusMsg.title}
+                message={statusMsg.message}
+              />
+            ) : null;
+          })()}
+
           <div style={styles.infoGrid}>
             <Info label="Doctor" value={consultation.doctor_name} />
             <Info label="Patient" value={consultation.patient_name} />
@@ -202,7 +282,11 @@ const ConsultationDetailModal = ({ consultation, events, onClose, actions, child
             ) : videoError ? (
               <div style={styles.videoError}>{videoError}</div>
             ) : videoJoin ? (
-              <VideoPanel join={videoJoin} onLeave={() => setVideoOpen(false)} />
+              <VideoPanel 
+                join={videoJoin} 
+                onLeave={() => setVideoOpen(false)}
+                onSessionReady={handleSessionReady}
+              />
             ) : null
           ) : null}
 

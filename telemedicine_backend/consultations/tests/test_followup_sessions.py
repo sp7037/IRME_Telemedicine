@@ -167,3 +167,46 @@ class ConsultationFollowUpSessionTests(TestCase):
         rx_messages = [m for m in chat.data["chat_history"] if m.get("is_prescription")]
         self.assertTrue(rx_messages)
         self.assertEqual(rx_messages[-1]["prescription_data"]["id"], rx_id)
+
+    def test_video_join_blocked_after_completion_without_active_followup(self):
+        """Video join should be blocked for completed consultations without an active follow-up."""
+        self.consultation.status = Consultation.StatusChoices.COMPLETED
+        self.consultation.is_completed = True
+        self.consultation.save()
+
+        self.client.force_authenticate(user=self.doctor_user)
+        response = self.client.post(
+            reverse("consultation-video-join", kwargs={"consultation_id": self.consultation.id})
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("Video is not available for completed consultations", response.data["error"])
+
+    def test_video_join_allowed_with_active_followup(self):
+        """Video join should be allowed for completed consultations with an active follow-up."""
+        self.consultation.status = Consultation.StatusChoices.COMPLETED
+        self.consultation.is_completed = True
+        self.consultation.save()
+
+        self.client.force_authenticate(user=self.patient_user)
+        followup_response = self.client.post(
+            reverse("patient-followup-request", kwargs={"consultation_id": self.consultation.id})
+        )
+        self.assertEqual(followup_response.status_code, status.HTTP_201_CREATED)
+        session_id = followup_response.data["follow_up_session_id"]
+
+        self.client.force_authenticate(user=self.doctor_user)
+        accept_response = self.client.post(
+            reverse("doctor-followup-response", kwargs={"followup_id": session_id}),
+            {"action": "ACCEPTED"},
+            format="json",
+        )
+        self.assertEqual(accept_response.status_code, status.HTTP_200_OK)
+
+        self.consultation.refresh_from_db()
+        self.assertEqual(self.consultation.status, Consultation.StatusChoices.IN_PROGRESS)
+        
+        active_followup = ConsultationFollowUpSession.objects.filter(
+            consultation=self.consultation,
+            status=ConsultationFollowUpSession.Status.IN_PROGRESS
+        ).first()
+        self.assertIsNotNone(active_followup)

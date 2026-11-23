@@ -14,6 +14,8 @@ import {
 import StatusBadge from "../../../components/dashboard/StatusBadge";
 import ConsultationDetailModal from "../../../components/dashboard/ConsultationDetailModal";
 import ConsultationChatPanel from "../../../components/dashboard/ConsultationChatPanel";
+import { getStatusMessage } from "../../../utils/consultationStatus";
+import { StaleNotification, LoadingNotification } from "../../../components/dashboard/InlineNotification";
 import {
   DoctorProfilePanel,
   DoctorAvailabilityPanel,
@@ -96,9 +98,14 @@ const DoctorDashboard = () => {
   const [loadError, setLoadError] = useState(null);
   const [doctorCard, setDoctorCard] = useState(null);
   const [notice, setNotice] = useState(null);
+  const [isStale, setIsStale] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const requestSeenRef = useRef(new Map());
   const requestReadyRef = useRef(false);
   const consultationStatusRef = useRef(new Map());
+  const refreshInFlightRef = useRef(false);
+  const mountedRef = useRef(true);
+  const selectedIdRef = useRef(null);
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(
     () => typeof window !== "undefined" && window.innerWidth < 768
@@ -119,63 +126,101 @@ const DoctorDashboard = () => {
   }, []);
 
   const refresh = useCallback(async () => {
+    if (refreshInFlightRef.current) return;
+    
+    refreshInFlightRef.current = true;
+    setIsRefreshing(true);
     setLoadError(null);
-    const [history, pend, queue, current] = await Promise.all([
-      getPatientConsultationHistory(),
-      getDoctorPendingRequests(),
-      getDoctorQueuedConsultations(),
-      getActiveConsultation(),
-    ]);
-    const earningData = await getDoctorEarningsSummary();
-    const pendingList = Array.isArray(pend) ? pend : [];
-    const nextSeen = new Map();
-    pendingList.forEach((request) => {
-      const key = `${request.is_follow_up_request ? "follow" : "consult"}:${request.is_follow_up_request ? request.follow_up_session_id || request.id : request.id}`;
-      nextSeen.set(key, request.status || "PENDING");
-      if (requestReadyRef.current && !requestSeenRef.current.has(key)) {
+    setIsStale(false);
+
+    try {
+      const [history, pend, queue, current] = await Promise.all([
+        getPatientConsultationHistory(),
+        getDoctorPendingRequests(),
+        getDoctorQueuedConsultations(),
+        getActiveConsultation(),
+      ]);
+      const earningData = await getDoctorEarningsSummary();
+
+      if (!mountedRef.current) return;
+
+      const pendingList = Array.isArray(pend) ? pend : [];
+      const nextSeen = new Map();
+      pendingList.forEach((request) => {
+        const key = `${request.is_follow_up_request ? "follow" : "consult"}:${request.is_follow_up_request ? request.follow_up_session_id || request.id : request.id}`;
+        nextSeen.set(key, request.status || "PENDING");
+        if (requestReadyRef.current && !requestSeenRef.current.has(key)) {
+          const statusMsg = getStatusMessage(request, "doctor");
+          showNotice(
+            statusMsg?.severity || (request.is_follow_up_request ? "warning" : "urgent"),
+            statusMsg?.title || (request.is_follow_up_request ? "Patient requested to resume chat" : "New consultation request"),
+            statusMsg?.message || `${formatRequestIdentity(request)}. Please review and take action.`
+          );
+        }
+      });
+      if (!requestReadyRef.current && pendingList.length > 0) {
+        const followUps = pendingList.filter((request) => request.is_follow_up_request).length;
         showNotice(
-          request.is_follow_up_request ? "warning" : "urgent",
-          request.is_follow_up_request ? "Patient requested to resume chat" : "New consultation request",
-          `${formatRequestIdentity(request)}. Please review and take action.`
+          "urgent",
+          `${pendingList.length} pending request${pendingList.length > 1 ? "s" : ""} waiting`,
+          followUps
+            ? `${followUps} patient resume-chat request${followUps > 1 ? "s" : ""} and ${pendingList.length - followUps} consultation request${pendingList.length - followUps === 1 ? "" : "s"} need action.`
+            : "New consultation requests are waiting. Please review and accept, reject, or suggest another time."
         );
       }
-    });
-    if (!requestReadyRef.current && pendingList.length > 0) {
-      const followUps = pendingList.filter((request) => request.is_follow_up_request).length;
-      showNotice(
-        "urgent",
-        `${pendingList.length} pending request${pendingList.length > 1 ? "s" : ""} waiting`,
-        followUps
-          ? `${followUps} patient resume-chat request${followUps > 1 ? "s" : ""} and ${pendingList.length - followUps} consultation request${pendingList.length - followUps === 1 ? "" : "s"} need action.`
-          : "New consultation requests are waiting. Please review and accept, reject, or suggest another time."
-      );
-    }
-    requestSeenRef.current = nextSeen;
-    requestReadyRef.current = true;
-    const historyList = Array.isArray(history) ? history : [];
-    historyList.forEach((consultation) => {
-      const previous = consultationStatusRef.current.get(consultation.id);
-      if (previous && previous !== consultation.status) {
-        const outcome = postponementOutcome(consultation, "doctor");
-        if (outcome) showNotice("warning", outcome.title, outcome.body);
+      requestSeenRef.current = nextSeen;
+      requestReadyRef.current = true;
+      const historyList = Array.isArray(history) ? history : [];
+      historyList.forEach((consultation) => {
+        const previous = consultationStatusRef.current.get(consultation.id);
+        if (previous && previous !== consultation.status) {
+          const statusMsg = getStatusMessage(consultation, "doctor");
+          if (statusMsg) {
+            showNotice(statusMsg.severity, statusMsg.title, statusMsg.message);
+          } else {
+            const outcome = postponementOutcome(consultation, "doctor");
+            if (outcome) showNotice("warning", outcome.title, outcome.body);
+          }
+        }
+      });
+      consultationStatusRef.current = new Map(historyList.map((c) => [c.id, c.status]));
+      setAll(historyList);
+      setPending(pendingList);
+      setQueued(Array.isArray(queue) ? queue : []);
+      setActive(current && !Array.isArray(current) && current.id ? current : null);
+      setEarnings(earningData);
+
+      if (selected && selected.id && selectedIdRef.current === selected.id) {
+        const updatedSelected = historyList.find((c) => c.id === selected.id) || current;
+        if (updatedSelected && updatedSelected.id === selected.id && selectedIdRef.current === selected.id) {
+          setSelected((prev) => ({ ...prev, ...updatedSelected }));
+        }
       }
-    });
-    consultationStatusRef.current = new Map(historyList.map((c) => [c.id, c.status]));
-    setAll(historyList);
-    setPending(pendingList);
-    setQueued(Array.isArray(queue) ? queue : []);
-    setActive(current && !Array.isArray(current) && current.id ? current : null);
-    setEarnings(earningData);
-  }, [formatRequestIdentity, showNotice]);
+    } catch (err) {
+      if (!mountedRef.current) return;
+      setLoadError(err?.message || "Could not load dashboard data.");
+      setIsStale(true);
+      console.error(err);
+    } finally {
+      if (mountedRef.current) {
+        setIsRefreshing(false);
+      }
+      refreshInFlightRef.current = false;
+    }
+  }, [formatRequestIdentity, showNotice, selected]);
 
   useEffect(() => {
+    mountedRef.current = true;
     const onR = () => {
       const w = window.innerWidth;
       setWinW(w);
       if (w >= 768) setSidebarCollapsed(false);
     };
     window.addEventListener("resize", onR);
-    return () => window.removeEventListener("resize", onR);
+    return () => {
+      mountedRef.current = false;
+      window.removeEventListener("resize", onR);
+    };
   }, []);
 
   useEffect(() => {
@@ -238,6 +283,7 @@ const DoctorDashboard = () => {
   );
 
   const openDetail = async (consultation) => {
+    selectedIdRef.current = consultation.id;
     setSelected(consultation);
     setPrescription(null);
     setRxVersions(null);
@@ -246,23 +292,40 @@ const DoctorDashboard = () => {
       getPrescription(consultation.id).catch(() => null),
       getPrescriptionVersions(consultation.id).catch(() => null),
     ]);
+    if (selectedIdRef.current !== consultation.id) return;
     setEvents(Array.isArray(e) ? e : []);
     setPrescription(rx && rx.id ? rx : null);
     setRxVersions(v && v.version_rows ? v : null);
   };
 
   const refreshPrescriptionDetail = async (consultationId) => {
+    if (!consultationId) return;
+    const targetId = consultationId;
     const [rx, v, e] = await Promise.all([
       getPrescription(consultationId).catch(() => null),
       getPrescriptionVersions(consultationId).catch(() => null),
       getConsultationEvents(consultationId, { order: "asc" }).catch(() => []),
     ]);
+    
+    if (!mountedRef.current) return;
+    if (selected?.id !== targetId) return;
+    
     setPrescription(rx && rx.id ? rx : null);
     setRxVersions(v && v.version_rows ? v : null);
     setEvents(Array.isArray(e) ? e : []);
   };
 
+  const actionInFlightRef = useRef(new Set());
+
   const handleAction = async (consultationId, status) => {
+    if (busy) return;
+    
+    const actionKey = `${consultationId}:${status}`;
+    if (actionInFlightRef.current.has(actionKey)) {
+      return;
+    }
+    
+    actionInFlightRef.current.add(actionKey);
     setBusy(true);
     try {
       const item = pending.find((p) => p.id === consultationId);
@@ -285,27 +348,36 @@ const DoctorDashboard = () => {
         `${formatRequestIdentity(item || { id: consultationId })}.`
       );
     } catch (err) {
-      const message = err?.message || "Could not process this request.";
-      showNotice("warning", "Action blocked", message);
+      const message = err?.response?.data?.error || err?.message || "Could not process this request.";
+      showNotice("error", "Action blocked", message);
       setLoadError(null);
       await refresh().catch((refreshErr) => {
         setLoadError(refreshErr?.message || "Refresh failed.");
         console.error(refreshErr);
       });
     } finally {
+      actionInFlightRef.current.delete(actionKey);
       setBusy(false);
     }
   };
 
+  const completeInFlightRef = useRef(false);
+
   const handleCompleteSelected = async () => {
-    if (!selected?.id || busy) return;
+    if (!selected?.id || busy || completeInFlightRef.current) return;
+    
+    completeInFlightRef.current = true;
     setBusy(true);
     try {
       await completeConsultation(selected.id);
       const updated = { ...selected, status: "COMPLETED", is_completed: true };
       setSelected(updated);
       await Promise.all([refresh(), refreshPrescriptionDetail(selected.id)]);
+      showNotice("success", "Consultation completed", `Consultation #${selected.id} has been marked complete. Chat and video are now closed.`);
+    } catch (err) {
+      showNotice("error", "Could not complete", err?.response?.data?.error || err?.message || "Failed to mark consultation as complete.");
     } finally {
+      completeInFlightRef.current = false;
       setBusy(false);
     }
   };
@@ -334,6 +406,10 @@ const DoctorDashboard = () => {
         </div>
       ) : null}
 
+      {isStale && !loadError ? (
+        <StaleNotification onRetry={refresh} />
+      ) : null}
+
       {loadError ? (
         <div style={styles.errorBanner} role="alert">
           <strong>Could not load data.</strong> {loadError}{" "}
@@ -353,6 +429,10 @@ const DoctorDashboard = () => {
             If you recently updated the code, run <code>python manage.py migrate</code> on the server.
           </p>
         </div>
+      ) : null}
+
+      {isRefreshing && !loadError && all.length === 0 ? (
+        <LoadingNotification message="Loading consultations..." />
       ) : null}
 
       {active?.completion_required ? (
@@ -804,7 +884,12 @@ const DoctorDashboard = () => {
       <ConsultationDetailModal
         consultation={selected}
         events={events}
-        onClose={() => { setSelected(null); setPrescription(null); setRxVersions(null); }}
+        onClose={() => { 
+          selectedIdRef.current = null;
+          setSelected(null); 
+          setPrescription(null); 
+          setRxVersions(null); 
+        }}
         viewerRole="doctor"
         actions={
           selected?.status === "IN_PROGRESS" && !selected?.is_completed ? (
@@ -1164,30 +1249,37 @@ const Metric = ({ label, value }) => (
   </article>
 );
 
-const RowCard = ({ consultation, label, actions, helper, emphasis }) => (
-  <article style={{ ...styles.rowCard, ...(emphasis ? styles[`row${emphasis}`] : {}) }}>
-    <div>
-      <div style={styles.rowTitle}>
-        Patient: {consultation.patient_name || "-"}
-        {consultation.is_follow_up_request ? <span style={styles.followTag}>Follow-up</span> : null}
-        {!consultation.is_follow_up_request && consultation.status === "PENDING" ? <span style={styles.newTag}>New request</span> : null}
-        {consultation.video?.status === "REQUESTED" ? <span style={styles.videoTag}>Video waiting</span> : null}
-        {consultation.video?.status === "ACCEPTED" ? <span style={styles.liveTag}>Video ready</span> : null}
-        {label ? <span style={styles.queueTag}>{label}</span> : null}
+const RowCard = ({ consultation, label, actions, helper, emphasis }) => {
+  const statusMsg = getStatusMessage(consultation, "doctor");
+  return (
+    <article style={{ ...styles.rowCard, ...(emphasis ? styles[`row${emphasis}`] : {}) }}>
+      <div>
+        <div style={styles.rowTitle}>
+          Patient: {consultation.patient_name || "-"}
+          {consultation.is_follow_up_request ? <span style={styles.followTag}>Follow-up</span> : null}
+          {!consultation.is_follow_up_request && consultation.status === "PENDING" ? <span style={styles.newTag}>New request</span> : null}
+          {consultation.video?.status === "REQUESTED" ? <span style={styles.videoTag}>Video waiting</span> : null}
+          {consultation.video?.status === "ACCEPTED" ? <span style={styles.liveTag}>Video ready</span> : null}
+          {label ? <span style={styles.queueTag}>{label}</span> : null}
+        </div>
+        <div style={styles.rowMeta}>
+          {consultation.consultation_type} - {consultation.formatted_time}
+          {consultation.is_follow_up_request ? ` - ${consultation.billing_type} follow-up` : ""}
+          {consultation.tmc_name ? ` - TMC: ${consultation.tmc_name}` : ""}
+        </div>
+        <div style={{ marginTop: 6 }}>
+          <StatusBadge status={consultation.status} />
+        </div>
+        {helper ? (
+          <p style={styles.helper}>{helper}</p>
+        ) : statusMsg ? (
+          <p style={styles.helper}>{statusMsg.message}</p>
+        ) : null}
       </div>
-      <div style={styles.rowMeta}>
-        {consultation.consultation_type} - {consultation.formatted_time}
-        {consultation.is_follow_up_request ? ` - ${consultation.billing_type} follow-up` : ""}
-        {consultation.tmc_name ? ` - TMC: ${consultation.tmc_name}` : ""}
-      </div>
-      <div style={{ marginTop: 6 }}>
-        <StatusBadge status={consultation.status} />
-      </div>
-      {helper ? <p style={styles.helper}>{helper}</p> : null}
-    </div>
-    {actions}
-  </article>
-);
+      {actions}
+    </article>
+  );
+};
 
 const Empty = ({ text }) => <p style={{ color: "#4c6480", margin: "4px 0" }}>{text}</p>;
 

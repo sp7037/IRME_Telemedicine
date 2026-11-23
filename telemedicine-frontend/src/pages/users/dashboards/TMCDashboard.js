@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import Header from "../../../components/Header";
 import Footer from "../../../components/Footer";
 import Sidebar from "../../../components/Sidebar";
@@ -23,6 +23,8 @@ import {
   deleteTMCQualificationDocument,
   requestConsultationFollowUp,
 } from "../../../api/users";
+import { getStatusMessage, getAvailableActions } from "../../../utils/consultationStatus";
+import { StaleNotification } from "../../../components/dashboard/InlineNotification";
 import axios from "axios";
 import { API_BASE_URL } from "../../../api/config";
 import { dashboardContentMarginLeft } from "../../../constants/dashboardLayout";
@@ -98,82 +100,129 @@ const TMCDashboard = () => {
   const [doctorSearch, setDoctorSearch] = useState("");
   const [doctorSpecialty, setDoctorSpecialty] = useState("");
   const [activeSection, setActiveSection] = useState("overview");
+  const [isStale, setIsStale] = useState(false);
+  
+  const mountedRef = useRef(true);
+  const inflightRefreshRef = useRef(false);
+  const chatIdRef = useRef(null);
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(
     () => typeof window !== "undefined" && window.innerWidth < 768
   );
   const [winW, setWinW] = useState(() => (typeof window !== "undefined" ? window.innerWidth : 1200));
 
-  const loadAll = useCallback(async () => {
-    const [s, c, p, profile] = await Promise.all([
-      getTMCSummary(),
-      getTMCConsultations(),
-      getTMCPatients(),
-      getTMCProfile(),
-    ]);
-    const fin = await getTMCFinanceSummary();
-    setSummary(s);
-    setConsultations(Array.isArray(c) ? c : []);
-    setPatients(Array.isArray(p) ? p : []);
-    const profileData = profile?.profile || profile;
-    setTmcProfile(profileData);
-    setProfileForm((current) => ({
-      ...current,
-      tmc_details: profileData?.tmc_details || "",
-      clinic_name: profileData?.clinic_name || "",
-      clinic_address_street: profileData?.clinic_address_street || "",
-      city: profileData?.city || "",
-      state: profileData?.state || "",
-      pin_code: profileData?.pin_code || "",
-      aadhaar_document: null,
-      user_photo: null,
-      clinic_front_photo: null,
-    }));
-    const d = await axios.get(`${API_BASE_URL}/consultations/available-doctors/`);
-    setDoctors(Array.isArray(d.data) ? d.data : []);
-    setFinance(fin);
+  const loadAll = useCallback(async (skipUnrelated = false) => {
+    if (inflightRefreshRef.current) return;
+    inflightRefreshRef.current = true;
+    
+    try {
+      if (skipUnrelated) {
+        const c = await getTMCConsultations();
+        if (!mountedRef.current) return;
+        setConsultations(Array.isArray(c) ? c : []);
+        setIsStale(false);
+      } else {
+        const [s, c, p, profile] = await Promise.all([
+          getTMCSummary(),
+          getTMCConsultations(),
+          getTMCPatients(),
+          getTMCProfile(),
+        ]);
+        const fin = await getTMCFinanceSummary();
+        
+        if (!mountedRef.current) return;
+        
+        setSummary(s);
+        setConsultations(Array.isArray(c) ? c : []);
+        setPatients(Array.isArray(p) ? p : []);
+        const profileData = profile?.profile || profile;
+        setTmcProfile(profileData);
+        setProfileForm((current) => ({
+          ...current,
+          tmc_details: profileData?.tmc_details || "",
+          clinic_name: profileData?.clinic_name || "",
+          clinic_address_street: profileData?.clinic_address_street || "",
+          city: profileData?.city || "",
+          state: profileData?.state || "",
+          pin_code: profileData?.pin_code || "",
+          aadhaar_document: null,
+          user_photo: null,
+          clinic_front_photo: null,
+        }));
+        const d = await axios.get(`${API_BASE_URL}/consultations/available-doctors/`);
+        setDoctors(Array.isArray(d.data) ? d.data : []);
+        setFinance(fin);
+        setIsStale(false);
+      }
+    } catch (err) {
+      if (mountedRef.current) {
+        setIsStale(true);
+      }
+    } finally {
+      inflightRefreshRef.current = false;
+    }
   }, []);
 
   useEffect(() => {
+    mountedRef.current = true;
     const onR = () => {
       const w = window.innerWidth;
       setWinW(w);
       if (w >= 768) setSidebarCollapsed(false);
     };
     window.addEventListener("resize", onR);
-    return () => window.removeEventListener("resize", onR);
+    return () => {
+      mountedRef.current = false;
+      window.removeEventListener("resize", onR);
+    };
   }, []);
 
   useEffect(() => {
     loadAll().catch(() => {});
+    const interval = setInterval(() => {
+      loadAll(true).catch(() => {});
+    }, 8000);
+    return () => clearInterval(interval);
   }, [loadAll]);
 
   useEffect(() => {
     if (!chatConsultation?.id) return undefined;
+    chatIdRef.current = chatConsultation.id;
     const id = setInterval(async () => {
+      const currentChatId = chatIdRef.current;
       try {
         const latest = await getTMCConsultations();
+        if (!mountedRef.current || chatIdRef.current !== currentChatId) return;
         const list = Array.isArray(latest) ? latest : [];
-        const fresh = list.find((item) => String(item.id) === String(chatConsultation.id));
+        const fresh = list.find((item) => String(item.id) === String(currentChatId));
         setConsultations(list);
-        if (fresh) setChatConsultation(fresh);
+        if (fresh && chatIdRef.current === currentChatId) {
+          setChatConsultation(fresh);
+        }
       } catch (err) {
         // Keep the current modal usable if a background status refresh fails.
       }
     }, 5000);
-    return () => clearInterval(id);
+    return () => {
+      clearInterval(id);
+      chatIdRef.current = null;
+    };
   }, [chatConsultation?.id]);
+
+  const [consultationMsg, setConsultationMsg] = useState("");
+  const [patientMsg, setPatientMsg] = useState("");
 
   const submit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setConsultationMsg("");
     try {
       await createTMCConsultation(form);
       setForm({ patient_id: "", doctor_id: "", scheduled_time: "" });
       await loadAll();
-      alert("Consultation initiated successfully.");
+      setConsultationMsg("Consultation initiated successfully.");
     } catch (err) {
-      alert(err?.response?.data?.error || err.message || "Failed to initiate consultation.");
+      setConsultationMsg(err?.response?.data?.error || err.message || "Failed to initiate consultation.");
     } finally {
       setLoading(false);
     }
@@ -182,15 +231,16 @@ const TMCDashboard = () => {
   const submitPatient = async (e) => {
     e.preventDefault();
     setPatientSaving(true);
+    setPatientMsg("");
     try {
       const patient = await createTMCPatient(patientForm);
       setPatientForm({ name: "", age: "", gender: "M" });
       setShowPatientModal(false);
       setForm((current) => ({ ...current, patient_id: patient.id }));
       await loadAll();
-      alert("Patient added for this TMC.");
+      setPatientMsg("Patient added for this TMC.");
     } catch (err) {
-      alert(err?.response?.data?.error || err.message || "Failed to add patient.");
+      setPatientMsg(err?.response?.data?.error || err.message || "Failed to add patient.");
     } finally {
       setPatientSaving(false);
     }
@@ -707,6 +757,12 @@ const TMCDashboard = () => {
             </div>
             <button type="button" style={styles.primaryButton} onClick={() => setShowPatientModal(true)}>Add New Patient</button>
           </div>
+          {consultationMsg ? (
+            <div style={consultationMsg.includes("success") ? styles.successNotice : styles.errorNotice}>
+              {consultationMsg}
+              <button type="button" style={styles.dismissBtn} onClick={() => setConsultationMsg("")}>×</button>
+            </div>
+          ) : null}
           <div style={styles.selectionGrid}>
             <div style={styles.finderPanel}>
               <div style={styles.finderHeader}>
@@ -777,35 +833,77 @@ const TMCDashboard = () => {
         {activeSection === "consultations" && (
         <>
         <section style={styles.section}>
-          <h3 style={styles.sectionTitle}>Consultation Tracking</h3>
-          <div style={styles.tableWrap}>
-            <table style={styles.table}>
-              <thead>
-                <tr>
-                  <th>ID</th><th>Patient</th><th>Doctor</th><th>Status</th><th>Type</th><th>Free/Paid</th><th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {consultations.map((c) => (
-                  <tr key={c.id}>
-                    <td>{c.id}</td>
-                    <td>{c.patient_name}</td>
-                    <td>{c.doctor_name}</td>
-                    <td><span style={styles.badge}>{c.status}</span></td>
-                    <td>{c.consultation_type}</td>
-                    <td>{consultationBillingLabel(c)}</td>
-                    <td>
-                      <div style={styles.tableActions}>
-                        <button onClick={() => openChat(c)} style={styles.primaryButton}>
-                          Open Chat
-                        </button>
-                        <button onClick={() => openTimeline(c)} style={styles.secondaryButton}>Timeline</button>
+          <div style={styles.sectionHeader}>
+            <div>
+              <h3 style={styles.sectionTitle}>Consultation Tracking</h3>
+              {isStale && (
+                <StaleNotification onRetry={() => loadAll()} />
+              )}
+            </div>
+          </div>
+          <div style={styles.consultationList}>
+            {consultations.length === 0 ? (
+              <div style={styles.emptyState}>
+                <strong>No consultations yet.</strong>
+                <span>Start a consultation from the "Start Consultation" section.</span>
+              </div>
+            ) : (
+              consultations.map((c) => {
+                const statusInfo = getStatusMessage(c, "tmc");
+                const actions = getAvailableActions(c, "tmc");
+                const hasFollowUp = c.follow_up?.active_status === "IN_PROGRESS";
+                return (
+                  <article key={c.id} style={styles.consultationCard}>
+                    <div style={styles.consultationHeader}>
+                      <div>
+                        <strong style={styles.consultationTitle}>
+                          {c.patient_name} → Dr. {c.doctor_name}
+                        </strong>
+                        <div style={styles.consultationMeta}>
+                          ID: {c.id} · {c.consultation_type} · {consultationBillingLabel(c)}
+                          {c.scheduled_time && ` · ${new Date(c.scheduled_time).toLocaleString("en-IN", { dateStyle: "short", timeStyle: "short", timeZone: "Asia/Kolkata" })} IST`}
+                        </div>
                       </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                      <span style={styles.badge}>{c.status}</span>
+                    </div>
+                    {statusInfo && (
+                      <div style={styles.statusMessage}>
+                        {statusInfo.message}
+                      </div>
+                    )}
+                    {c.status === "POSTPONED" && c.formatted_suggested_time && (
+                      <div style={styles.postponedNote}>
+                        <strong>Proposed time:</strong> {c.formatted_suggested_time}
+                        <div style={styles.smallMeta}>The patient must accept or reject this time.</div>
+                      </div>
+                    )}
+                    {hasFollowUp && (
+                      <div style={styles.followUpIndicator}>
+                        Active follow-up session in progress
+                      </div>
+                    )}
+                    <div style={styles.cardActions}>
+                      {actions.map((action) => (
+                        <button
+                          key={action.key}
+                          type="button"
+                          style={action.variant === "primary" ? styles.primaryButton : styles.secondaryButton}
+                          onClick={() => {
+                            if (action.key === "open_chat" || action.key === "open_followup") {
+                              openChat(c);
+                            } else if (action.key === "view_timeline") {
+                              openTimeline(c);
+                            }
+                          }}
+                        >
+                          {action.label}
+                        </button>
+                      ))}
+                    </div>
+                  </article>
+                );
+              })
+            )}
           </div>
         </section>
 
@@ -872,6 +970,12 @@ const TMCDashboard = () => {
                 <h3 style={styles.sectionTitle}>Add TMC Patient</h3>
                 <button type="button" style={styles.secondaryButton} onClick={() => setShowPatientModal(false)}>Close</button>
               </div>
+              {patientMsg ? (
+                <div style={patientMsg.includes("added") ? styles.successNotice : styles.errorNotice}>
+                  {patientMsg}
+                  <button type="button" style={styles.dismissBtn} onClick={() => setPatientMsg("")}>×</button>
+                </div>
+              ) : null}
               <form onSubmit={submitPatient} style={styles.patientCreateGrid}>
                 <input style={styles.input} placeholder="Patient full name" value={patientForm.name} onChange={(e) => setPatientForm({ ...patientForm, name: e.target.value })} required />
                 <input style={styles.input} type="number" min="0" max="120" placeholder="Age" value={patientForm.age} onChange={(e) => setPatientForm({ ...patientForm, age: e.target.value })} required />
@@ -1069,6 +1173,9 @@ const styles = {
   secondaryButton: { background: "#edf4fd", color: "#174577", border: "1px solid #8ab0dc", borderRadius: 8, padding: "6px 10px", cursor: "pointer", fontWeight: 700 },
   notice: { background: "#edf7ee", border: "1px solid #b7dcbc", color: "#185a2b", borderRadius: 8, padding: 10, margin: "8px 0 12px" },
   lockNotice: { background: "#fff7e6", border: "1px solid #f0c36d", color: "#7a4b00", borderRadius: 8, padding: 10, margin: "8px 0 12px" },
+  successNotice: { background: "#eef8f2", border: "1px solid #acd9bf", color: "#123a2a", borderRadius: 8, padding: "10px 12px", margin: "8px 0 12px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 },
+  errorNotice: { background: "#fdeeee", border: "1px solid #efb4b4", color: "#711f1f", borderRadius: 8, padding: "10px 12px", margin: "8px 0 12px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 },
+  dismissBtn: { background: "rgba(255,255,255,0.75)", border: "1px solid rgba(18,58,111,0.2)", borderRadius: 6, width: 24, height: 24, fontWeight: 800, cursor: "pointer", fontSize: 16, lineHeight: "20px" },
   followUpBox: {
     display: "flex",
     justifyContent: "space-between",
@@ -1137,6 +1244,15 @@ const styles = {
   smallMeta: { color: "#4c6480", fontSize: 12, marginTop: 4 },
   reportSplit: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 12 },
   reportPanel: { border: "1px solid #d7e5f5", borderRadius: 8, padding: 12, background: "#fbfdff" },
+  consultationList: { display: "grid", gap: 12, marginTop: 12 },
+  consultationCard: { border: "1px solid #d7e5f5", borderRadius: 12, padding: 14, background: "#fbfdff", display: "grid", gap: 10 },
+  consultationHeader: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 },
+  consultationTitle: { color: "#123a6f", fontSize: 15 },
+  consultationMeta: { color: "#4c6480", fontSize: 13, marginTop: 4 },
+  statusMessage: { color: "#10243e", fontSize: 14, padding: "8px 12px", background: "#f0f7ff", borderRadius: 8, border: "1px solid #c6d7eb" },
+  postponedNote: { background: "#fff7e6", border: "1px solid #f0c36d", borderRadius: 8, padding: 10, fontSize: 13, color: "#7a4b00" },
+  followUpIndicator: { background: "#e8f4ff", border: "1px solid #8ab0dc", borderRadius: 8, padding: 8, fontSize: 13, color: "#123a6f", fontWeight: 700 },
+  cardActions: { display: "flex", gap: 8, flexWrap: "wrap", marginTop: 4 },
 };
 
 export default TMCDashboard;

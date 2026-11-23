@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import RealtimeKitClient from "@cloudflare/realtimekit";
 import { getConsultationVideoJoin } from "../../api/users";
+import { releaseLocalTracks, leaveSdkSession } from "../../utils/videoLifecycle";
 
 const normalizeCredentials = (payload) => {
   if (!payload) return null;
@@ -89,7 +90,7 @@ const mergeLocalTracks = (streamRef, newTracks) => {
   return streamRef.current;
 };
 
-const VideoPanel = ({ join, consultationId, onLeave }) => {
+const VideoPanel = ({ join, consultationId, onLeave, onSessionReady }) => {
   const [credentials, setCredentials] = useState(() => normalizeCredentials(join));
   const [loadingMessage, setLoadingMessage] = useState(join ? "" : "Preparing secure video room...");
   const [error, setError] = useState("");
@@ -163,10 +164,10 @@ const VideoPanel = ({ join, consultationId, onLeave }) => {
     );
   }
 
-  return <CloudflareRoom credentials={credentials} onLeave={onLeave} />;
+  return <CloudflareRoom credentials={credentials} onLeave={onLeave} onSessionReady={onSessionReady} />;
 };
 
-const CloudflareRoom = ({ credentials, onLeave }) => {
+const CloudflareRoom = ({ credentials, onLeave, onSessionReady }) => {
   const localVideoRef = useRef(null);
   const localStreamRef = useRef(null);
   const meetingRef = useRef(null);
@@ -259,6 +260,14 @@ const CloudflareRoom = ({ credentials, onLeave }) => {
 
         updateParticipants(activeMeeting);
         setStatus("Connected. Waiting for the other participant...");
+
+        if (onSessionReady && typeof onSessionReady === "function") {
+          onSessionReady({
+            meeting: activeMeeting,
+            localStream: localStreamRef.current,
+            videoElement: localVideoEl,
+          });
+        }
       } catch (err) {
         if (!cancelled) {
           setStatus("");
@@ -274,18 +283,21 @@ const CloudflareRoom = ({ credentials, onLeave }) => {
       cleanups.forEach((cleanup) => cleanup());
       participantCleanupsRef.current.forEach((cleanup) => cleanup());
       participantCleanupsRef.current = [];
-      if (meetingRef.current?.leave) {
-        Promise.resolve(meetingRef.current.leave()).catch(() => {});
+      
+      if (meetingRef.current) {
+        leaveSdkSession(meetingRef.current);
       }
+      
       if (localStreamRef.current) {
-        localStreamRef.current.getTracks().forEach((track) => track.stop());
+        releaseLocalTracks(localStreamRef.current);
       }
+      
       if (localVideoEl) {
         localVideoEl.srcObject = null;
       }
       setMeeting(null);
     };
-  }, [credentials]);
+  }, [credentials, onSessionReady]);
 
   const toggleAudio = async () => {
     if (!meetingRef.current) return;
@@ -354,9 +366,14 @@ const CloudflareRoom = ({ credentials, onLeave }) => {
   const leaveRoom = async () => {
     setStatus("Leaving video room...");
     try {
-      if (meetingRef.current?.leave) await meetingRef.current.leave();
+      if (meetingRef.current) {
+        await leaveSdkSession(meetingRef.current);
+      }
     } finally {
-      localStreamRef.current?.getTracks().forEach((track) => track.stop());
+      if (localStreamRef.current) {
+        releaseLocalTracks(localStreamRef.current);
+        localStreamRef.current = null;
+      }
       onLeave?.();
       setStatus("Video room closed.");
     }
