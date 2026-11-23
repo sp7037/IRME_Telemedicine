@@ -312,8 +312,17 @@ const DoctorDashboard = () => {
     setEvents(Array.isArray(e) ? e : []);
   };
 
+  const actionInFlightRef = useRef(new Set());
+
   const handleAction = async (consultationId, status) => {
     if (busy) return;
+    
+    const actionKey = `${consultationId}:${status}`;
+    if (actionInFlightRef.current.has(actionKey)) {
+      return;
+    }
+    
+    actionInFlightRef.current.add(actionKey);
     setBusy(true);
     try {
       const item = pending.find((p) => p.id === consultationId);
@@ -344,12 +353,17 @@ const DoctorDashboard = () => {
         console.error(refreshErr);
       });
     } finally {
+      actionInFlightRef.current.delete(actionKey);
       setBusy(false);
     }
   };
 
+  const completeInFlightRef = useRef(false);
+
   const handleCompleteSelected = async () => {
-    if (!selected?.id || busy) return;
+    if (!selected?.id || busy || completeInFlightRef.current) return;
+    
+    completeInFlightRef.current = true;
     setBusy(true);
     try {
       await completeConsultation(selected.id);
@@ -360,6 +374,7 @@ const DoctorDashboard = () => {
     } catch (err) {
       showNotice("error", "Could not complete", err?.response?.data?.error || err?.message || "Failed to mark consultation as complete.");
     } finally {
+      completeInFlightRef.current = false;
       setBusy(false);
     }
   };
@@ -1226,30 +1241,37 @@ const Metric = ({ label, value }) => (
   </article>
 );
 
-const RowCard = ({ consultation, label, actions, helper, emphasis }) => (
-  <article style={{ ...styles.rowCard, ...(emphasis ? styles[`row${emphasis}`] : {}) }}>
-    <div>
-      <div style={styles.rowTitle}>
-        Patient: {consultation.patient_name || "-"}
-        {consultation.is_follow_up_request ? <span style={styles.followTag}>Follow-up</span> : null}
-        {!consultation.is_follow_up_request && consultation.status === "PENDING" ? <span style={styles.newTag}>New request</span> : null}
-        {consultation.video?.status === "REQUESTED" ? <span style={styles.videoTag}>Video waiting</span> : null}
-        {consultation.video?.status === "ACCEPTED" ? <span style={styles.liveTag}>Video ready</span> : null}
-        {label ? <span style={styles.queueTag}>{label}</span> : null}
+const RowCard = ({ consultation, label, actions, helper, emphasis }) => {
+  const statusMsg = getStatusMessage(consultation, "doctor");
+  return (
+    <article style={{ ...styles.rowCard, ...(emphasis ? styles[`row${emphasis}`] : {}) }}>
+      <div>
+        <div style={styles.rowTitle}>
+          Patient: {consultation.patient_name || "-"}
+          {consultation.is_follow_up_request ? <span style={styles.followTag}>Follow-up</span> : null}
+          {!consultation.is_follow_up_request && consultation.status === "PENDING" ? <span style={styles.newTag}>New request</span> : null}
+          {consultation.video?.status === "REQUESTED" ? <span style={styles.videoTag}>Video waiting</span> : null}
+          {consultation.video?.status === "ACCEPTED" ? <span style={styles.liveTag}>Video ready</span> : null}
+          {label ? <span style={styles.queueTag}>{label}</span> : null}
+        </div>
+        <div style={styles.rowMeta}>
+          {consultation.consultation_type} - {consultation.formatted_time}
+          {consultation.is_follow_up_request ? ` - ${consultation.billing_type} follow-up` : ""}
+          {consultation.tmc_name ? ` - TMC: ${consultation.tmc_name}` : ""}
+        </div>
+        <div style={{ marginTop: 6 }}>
+          <StatusBadge status={consultation.status} />
+        </div>
+        {helper ? (
+          <p style={styles.helper}>{helper}</p>
+        ) : statusMsg ? (
+          <p style={styles.helper}>{statusMsg.message}</p>
+        ) : null}
       </div>
-      <div style={styles.rowMeta}>
-        {consultation.consultation_type} - {consultation.formatted_time}
-        {consultation.is_follow_up_request ? ` - ${consultation.billing_type} follow-up` : ""}
-        {consultation.tmc_name ? ` - TMC: ${consultation.tmc_name}` : ""}
-      </div>
-      <div style={{ marginTop: 6 }}>
-        <StatusBadge status={consultation.status} />
-      </div>
-      {helper ? <p style={styles.helper}>{helper}</p> : null}
-    </div>
-    {actions}
-  </article>
-);
+      {actions}
+    </article>
+  );
+};
 
 const Empty = ({ text }) => <p style={{ color: "#4c6480", margin: "4px 0" }}>{text}</p>;
 
