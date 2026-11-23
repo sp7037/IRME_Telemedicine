@@ -210,9 +210,10 @@ npm run build
 
 3. **Deployment considerations:**
    - No database migrations required
-   - Backend video join check already deployed (checks active follow-up for COMPLETED consultations)
+   - Backend video join check implemented (checks active follow-up for COMPLETED consultations)
    - Frontend build artifacts ready for deployment
    - Preserve existing logos, homepage, languages, patient registration redesign
+   - Changes require deployment; nothing is deployed until merged to staging/production
    
 4. **Next agent run scope (Part 3 of 4):**
    - PatientDashboard integration with shared helpers
