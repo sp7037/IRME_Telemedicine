@@ -164,16 +164,20 @@ const TMCDashboard = () => {
     return () => clearInterval(id);
   }, [chatConsultation?.id]);
 
+  const [consultationMsg, setConsultationMsg] = useState("");
+  const [patientMsg, setPatientMsg] = useState("");
+
   const submit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setConsultationMsg("");
     try {
       await createTMCConsultation(form);
       setForm({ patient_id: "", doctor_id: "", scheduled_time: "" });
       await loadAll();
-      alert("Consultation initiated successfully.");
+      setConsultationMsg("Consultation initiated successfully.");
     } catch (err) {
-      alert(err?.response?.data?.error || err.message || "Failed to initiate consultation.");
+      setConsultationMsg(err?.response?.data?.error || err.message || "Failed to initiate consultation.");
     } finally {
       setLoading(false);
     }
@@ -182,15 +186,16 @@ const TMCDashboard = () => {
   const submitPatient = async (e) => {
     e.preventDefault();
     setPatientSaving(true);
+    setPatientMsg("");
     try {
       const patient = await createTMCPatient(patientForm);
       setPatientForm({ name: "", age: "", gender: "M" });
       setShowPatientModal(false);
       setForm((current) => ({ ...current, patient_id: patient.id }));
       await loadAll();
-      alert("Patient added for this TMC.");
+      setPatientMsg("Patient added for this TMC.");
     } catch (err) {
-      alert(err?.response?.data?.error || err.message || "Failed to add patient.");
+      setPatientMsg(err?.response?.data?.error || err.message || "Failed to add patient.");
     } finally {
       setPatientSaving(false);
     }
@@ -707,6 +712,12 @@ const TMCDashboard = () => {
             </div>
             <button type="button" style={styles.primaryButton} onClick={() => setShowPatientModal(true)}>Add New Patient</button>
           </div>
+          {consultationMsg ? (
+            <div style={consultationMsg.includes("success") ? styles.successNotice : styles.errorNotice}>
+              {consultationMsg}
+              <button type="button" style={styles.dismissBtn} onClick={() => setConsultationMsg("")}>×</button>
+            </div>
+          ) : null}
           <div style={styles.selectionGrid}>
             <div style={styles.finderPanel}>
               <div style={styles.finderHeader}>
@@ -872,6 +883,12 @@ const TMCDashboard = () => {
                 <h3 style={styles.sectionTitle}>Add TMC Patient</h3>
                 <button type="button" style={styles.secondaryButton} onClick={() => setShowPatientModal(false)}>Close</button>
               </div>
+              {patientMsg ? (
+                <div style={patientMsg.includes("added") ? styles.successNotice : styles.errorNotice}>
+                  {patientMsg}
+                  <button type="button" style={styles.dismissBtn} onClick={() => setPatientMsg("")}>×</button>
+                </div>
+              ) : null}
               <form onSubmit={submitPatient} style={styles.patientCreateGrid}>
                 <input style={styles.input} placeholder="Patient full name" value={patientForm.name} onChange={(e) => setPatientForm({ ...patientForm, name: e.target.value })} required />
                 <input style={styles.input} type="number" min="0" max="120" placeholder="Age" value={patientForm.age} onChange={(e) => setPatientForm({ ...patientForm, age: e.target.value })} required />
@@ -1069,6 +1086,9 @@ const styles = {
   secondaryButton: { background: "#edf4fd", color: "#174577", border: "1px solid #8ab0dc", borderRadius: 8, padding: "6px 10px", cursor: "pointer", fontWeight: 700 },
   notice: { background: "#edf7ee", border: "1px solid #b7dcbc", color: "#185a2b", borderRadius: 8, padding: 10, margin: "8px 0 12px" },
   lockNotice: { background: "#fff7e6", border: "1px solid #f0c36d", color: "#7a4b00", borderRadius: 8, padding: 10, margin: "8px 0 12px" },
+  successNotice: { background: "#eef8f2", border: "1px solid #acd9bf", color: "#123a2a", borderRadius: 8, padding: "10px 12px", margin: "8px 0 12px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 },
+  errorNotice: { background: "#fdeeee", border: "1px solid #efb4b4", color: "#711f1f", borderRadius: 8, padding: "10px 12px", margin: "8px 0 12px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 },
+  dismissBtn: { background: "rgba(255,255,255,0.75)", border: "1px solid rgba(18,58,111,0.2)", borderRadius: 6, width: 24, height: 24, fontWeight: 800, cursor: "pointer", fontSize: 16, lineHeight: "20px" },
   followUpBox: {
     display: "flex",
     justifyContent: "space-between",

@@ -1,8 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import StatusBadge from "./StatusBadge";
 import ConsultationTimeline from "./ConsultationTimeline";
 import VideoPanel from "./VideoPanel";
 import { getConsultationVideoJoin, requestConsultationVideo, respondConsultationVideo } from "../../api/users";
+import { isTerminalStatus } from "../../utils/consultationStatus";
+import { shouldCloseVideo, shouldClearCredentials } from "../../utils/videoLifecycle";
 
 const ConsultationDetailModal = ({ consultation, events, onClose, actions, children, viewerRole = "patient" }) => {
   const [minimized, setMinimized] = useState(false);
@@ -12,6 +14,7 @@ const ConsultationDetailModal = ({ consultation, events, onClose, actions, child
   const [videoLoading, setVideoLoading] = useState(false);
   const [videoError, setVideoError] = useState("");
   const [videoState, setVideoState] = useState(consultation?.video || { status: "NONE" });
+  const previousStatusRef = useRef(null);
 
   useEffect(() => {
     setVideoState(consultation?.video || { status: "NONE" });
@@ -23,10 +26,29 @@ const ConsultationDetailModal = ({ consultation, events, onClose, actions, child
   ]);
 
   useEffect(() => {
+    const currentEffectiveStatus = consultation?.follow_up?.active_status === "IN_PROGRESS"
+      ? "IN_PROGRESS"
+      : consultation?.status;
+
+    if (shouldCloseVideo(consultation, previousStatusRef.current)) {
+      setVideoOpen(false);
+      setVideoJoin(null);
+      setVideoError("");
+    }
+
+    if (shouldClearCredentials(consultation)) {
+      setVideoJoin(null);
+    }
+
+    previousStatusRef.current = currentEffectiveStatus;
+  }, [consultation?.status, consultation?.follow_up?.active_status]);
+
+  useEffect(() => {
     setVideoState(consultation?.video || { status: "NONE" });
     setVideoJoin(null);
     setVideoOpen(false);
     setVideoError("");
+    previousStatusRef.current = null;
   }, [consultation?.id]);
 
   if (!consultation) return null;
@@ -85,6 +107,14 @@ const ConsultationDetailModal = ({ consultation, events, onClose, actions, child
 
   const renderVideoActions = () => {
     const status = videoState?.status || "NONE";
+    const consultationStatus = consultation?.follow_up?.active_status === "IN_PROGRESS"
+      ? "IN_PROGRESS"
+      : consultation?.status;
+
+    if (isTerminalStatus(consultationStatus) && consultationStatus !== "IN_PROGRESS") {
+      return null;
+    }
+
     if (viewerRole === "doctor" && consultation?.completion_required) return null;
     if (viewerRole === "doctor") {
       if (status === "ACCEPTED") {

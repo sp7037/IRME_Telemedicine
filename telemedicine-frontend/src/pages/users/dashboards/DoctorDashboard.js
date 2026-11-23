@@ -263,6 +263,7 @@ const DoctorDashboard = () => {
   };
 
   const handleAction = async (consultationId, status) => {
+    if (busy) return;
     setBusy(true);
     try {
       const item = pending.find((p) => p.id === consultationId);
@@ -285,8 +286,8 @@ const DoctorDashboard = () => {
         `${formatRequestIdentity(item || { id: consultationId })}.`
       );
     } catch (err) {
-      const message = err?.message || "Could not process this request.";
-      showNotice("warning", "Action blocked", message);
+      const message = err?.response?.data?.error || err?.message || "Could not process this request.";
+      showNotice("error", "Action blocked", message);
       setLoadError(null);
       await refresh().catch((refreshErr) => {
         setLoadError(refreshErr?.message || "Refresh failed.");
@@ -305,6 +306,9 @@ const DoctorDashboard = () => {
       const updated = { ...selected, status: "COMPLETED", is_completed: true };
       setSelected(updated);
       await Promise.all([refresh(), refreshPrescriptionDetail(selected.id)]);
+      showNotice("success", "Consultation completed", `Consultation #${selected.id} has been marked complete. Chat and video are now closed.`);
+    } catch (err) {
+      showNotice("error", "Could not complete", err?.response?.data?.error || err?.message || "Failed to mark consultation as complete.");
     } finally {
       setBusy(false);
     }
