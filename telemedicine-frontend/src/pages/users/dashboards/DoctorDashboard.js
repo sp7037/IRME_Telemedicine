@@ -14,7 +14,7 @@ import {
 import StatusBadge from "../../../components/dashboard/StatusBadge";
 import ConsultationDetailModal from "../../../components/dashboard/ConsultationDetailModal";
 import ConsultationChatPanel from "../../../components/dashboard/ConsultationChatPanel";
-import { getStatusMessage, getAvailableActions } from "../../../utils/consultationStatus";
+import { getStatusMessage } from "../../../utils/consultationStatus";
 import { StaleNotification, LoadingNotification } from "../../../components/dashboard/InlineNotification";
 import {
   DoctorProfilePanel,
