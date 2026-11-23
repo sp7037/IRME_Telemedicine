@@ -8,8 +8,9 @@ jest.mock("../../../api/users");
 jest.mock("../../../utils/videoLifecycle");
 
 jest.mock("../VideoPanel", () => {
+  const mockReact = require("react");
   return function MockVideoPanel({ onSessionReady }) {
-    React.useEffect(() => {
+    mockReact.useEffect(() => {
       if (onSessionReady) {
         const mockSession = {
           meeting: { leave: jest.fn() },
@@ -19,7 +20,7 @@ jest.mock("../VideoPanel", () => {
         onSessionReady(mockSession);
       }
     }, [onSessionReady]);
-    return <div data-testid="video-panel">Video Panel</div>;
+    return mockReact.createElement("div", { "data-testid": "video-panel" }, "Video Panel");
   };
 });
 
