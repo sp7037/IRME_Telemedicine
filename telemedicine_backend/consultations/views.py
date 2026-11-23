@@ -1946,6 +1946,13 @@ class ConsultationVideoJoinView(APIView):
                 {"error": "This consultation has been in progress for more than 24 hours. Please ask the doctor to mark it complete before using video again."},
                 status=400,
             )
+        if consultation.status == Consultation.StatusChoices.COMPLETED:
+            active_followup = _active_followup_session(consultation)
+            if not active_followup or active_followup.status != ConsultationFollowUpSession.Status.IN_PROGRESS:
+                return Response(
+                    {"error": "Video is not available for completed consultations without an active follow-up session."},
+                    status=400,
+                )
         try:
             return Response(get_or_create_video_join(consultation, request.user), status=200)
         except VideoProviderError as exc:
