@@ -17,6 +17,7 @@ const ConsultationDetailModal = ({
   viewerRole = "patient",
   onVideoStateChange,
   autoRequestVideo = false,
+  autoOpenVideo = false,
 }) => {
   const [minimized, setMinimized] = useState(false);
   const [timelineOpen, setTimelineOpen] = useState(false);
@@ -159,6 +160,14 @@ const ConsultationDetailModal = ({
     // Intentionally run once when autoRequestVideo flips on for this consultation
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoRequestVideo, consultation?.id]);
+
+  useEffect(() => {
+    if (!autoOpenVideo || !consultation?.id) return;
+    if ((videoState?.status || "NONE") !== "ACCEPTED") return;
+    openVideo();
+    // Intentionally run when parent asks to join after accept
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoOpenVideo, consultation?.id, videoState?.status]);
 
   const renderVideoActions = () => {
     const status = videoState?.status || "NONE";
