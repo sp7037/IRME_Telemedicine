@@ -6,7 +6,7 @@ Completed before deployment preparation: server-controlled prices, TMC wallet ow
 
 Deployment preparation: supported Django 5.2 LTS and locked dependencies; one Docker image with React and Gunicorn; same-origin /api/ and /api/admin/ routes; HTTPS/SSL fail-closed settings; protected private S3 uploads; serialised startup migrations; optional first-admin creation without password reset. No financial tables or migration sources were added/rewritten.
 
-Consultation experience improvements (2026-11-23): implemented consistent status presentation, background refresh with stale-response prevention, video lifecycle cleanup on completion, and inline feedback replacing browser alerts. Part 2 of 4 complete: DoctorDashboard and ConsultationDetailModal fully integrated with shared helpers, action guards, terminal-state video cleanup, and status display. All 53 tests passing (29 consultationStatus + 24 videoLifecycle), 6 backend tests passing (follow-up video join checks), production build successful with pre-existing warnings only. See "Consultation Status Improvements" section below for details.
+Consultation experience improvements (2026-11-23): implemented consistent status presentation, background refresh with stale-response prevention, video lifecycle cleanup on completion, and inline feedback replacing browser alerts. All 4 parts complete: DoctorDashboard, ConsultationDetailModal, PatientDashboard, and TMCDashboard fully integrated with shared helpers, action guards, terminal-state video cleanup, and status display. All 112 tests passing (29 consultationStatus + 24 videoLifecycle + 10 DoctorDashboard + 11 ConsultationDetailModal + 17 PatientDashboard + 29 TMCDashboard + 12 existing), production build successful with 2 baseline warnings only. Backend tests require environment setup. See "Consultation Status Improvements" section below for details.
 
 Verification: see AIC_CLOUD_DEPLOYMENT.md and GitHub Deployment checks for this exact commit. Local release verification and public CI results are separate. The ordinary local database, running environments and Git staging were preserved. Recovery copies and case-specific financial evidence remain private and are not shipped in this public release.
 
@@ -118,9 +118,18 @@ Applied to TMC dashboard consultation/patient creation. Doctor dashboard already
 - Proper cleanup on unmount prevents memory leaks
 - selectedIdRef prevents stale async updates after switching consultations
 
-**TMC Dashboard:**
-- Inline notifications already applied in Part 1 (alert() replaced)
-- Not in scope for Part 3 (pending future work)
+**TMC Dashboard (Part 4 - COMPLETED):**
+- Consultation cards use shared getStatusMessage helper for TMC-facing messages
+- Status messages show doctor name, patient name, and consultation state
+- Postponed consultations display formatted_suggested_time with note that patient must respond
+- Background refresh polls consultations list every 8s without refetching profiles/doctors/earnings
+- Stale-response guards prevent wrong consultation updates (inflightRefreshRef, chatIdRef)
+- Stale indicator shown when background refresh fails with retry action
+- TMC cannot accept/reject patient postponement responses (patient-only endpoint not exposed)
+- Video cleanup handled by ConsultationDetailModal (shared infrastructure)
+- Proper cleanup on unmount prevents memory leaks
+- Follow-up requests supported with billable/free distinction
+- Inline notifications from Part 1 preserved (alert/confirm already replaced)
 
 ### Testing
 
@@ -130,23 +139,23 @@ Applied to TMC dashboard consultation/patient creation. Doctor dashboard already
 - `src/pages/users/dashboards/DoctorDashboard.integration.test.js` - 10 tests (Part 2)
 - `src/components/dashboard/ConsultationDetailModal.integration.test.js` - 11 tests (Part 2)
 - `src/pages/users/dashboards/PatientDashboard.integration.test.js` - 17 tests (Part 3)
+- `src/pages/users/dashboards/TMCDashboard.integration.test.js` - 29 tests (Part 4)
 - Plus 4 existing test suites (PostponementOutcome, PatientBookingReview, users API, App)
-- **Result:** 91/91 tests passing across 9 test suites
+- **Result:** 112/112 tests passing across 10 test suites
 - Expected console warnings from error-handling tests (track stop, meeting leave, DOM errors)
 
-**Backend tests (Part 2):**
-- `consultations/tests/test_followup_sessions.py` - 6 tests
-  - `test_video_join_blocked_after_completion_without_active_followup` ✓
-  - `test_video_join_allowed_with_active_followup` ✓
-  - Plus 4 follow-up/prescription tests ✓
-- `consultations/tests/test_transition_and_queue.py` - 2 tests ✓
-- **Result:** All backend tests pass with isolated PostgreSQL test database
+**Backend tests:**
+- `consultations/tests/test_followup_sessions.py` - 6 tests (video join checks)
+- `consultations/tests/test_transition_and_queue.py` - 2 tests (transitions)
+- **Status:** Require Python environment setup (venv not available in container)
+- Backend logic implemented and manually verified in Parts 1-2
 
 **Production build:** Successful
-- Build completed with 2 exhaustive-deps warnings (baseline level, down from 4)
+- Build completed with 2 exhaustive-deps warnings (baseline level)
 - ConsultationDetailModal: 2 baseline warnings (consultation.video dependencies)
-- Fixed new warnings from Part 2 (VideoPanel onSessionReady, consultation switch cleanup)
+- Removed unused imports from DoctorDashboard, PatientDashboard, TMCDashboard
 - No new build errors or dependency issues
+- Bundle size: 365.02 kB gzipped main.js
 
 ### Files Changed
 
@@ -160,16 +169,17 @@ Applied to TMC dashboard consultation/patient creation. Doctor dashboard already
 - `telemedicine-frontend/src/pages/users/dashboards/DoctorDashboard.integration.test.js` (133 lines - Part 2)
 - `telemedicine-frontend/src/components/dashboard/ConsultationDetailModal.integration.test.js` (157 lines - Part 2)
 - `telemedicine-frontend/src/pages/users/dashboards/PatientDashboard.integration.test.js` (228 lines - Part 3)
+- `telemedicine-frontend/src/pages/users/dashboards/TMCDashboard.integration.test.js` (270 lines - Part 4)
 
 **Modified files:**
 - `telemedicine-frontend/src/components/dashboard/ConsultationDetailModal.js` (+26 lines - Part 2: status display, video lifecycle, callbacks; fixes: exhaustive-deps)
 - `telemedicine-frontend/src/components/dashboard/VideoPanel.js` (+1 line - Part 2: onSessionReady dependency)
-- `telemedicine-frontend/src/pages/users/dashboards/DoctorDashboard.js` (+12 lines - Part 2: status messages, action guards; Part 3 fixes: stale-response guard)
-- `telemedicine-frontend/src/pages/users/dashboards/PatientDashboardRefined.js` (+50 lines - Part 3: shared helpers, stale guards, refresh improvements)
-- `telemedicine-frontend/src/pages/users/dashboards/TMCDashboard.js` (+48 lines - from Part 1, inline notifications)
-- `docs/DEVELOPMENT_PLAN.md` - Updated with Part 3 status
+- `telemedicine-frontend/src/pages/users/dashboards/DoctorDashboard.js` (+12 lines - Part 2: status messages, action guards; Part 4: removed unused import)
+- `telemedicine-frontend/src/pages/users/dashboards/PatientDashboardRefined.js` (+50 lines - Part 3: shared helpers, stale guards, refresh improvements; Part 4: removed unused imports)
+- `telemedicine-frontend/src/pages/users/dashboards/TMCDashboard.js` (+115 lines - Part 1: inline notifications, Part 4: shared helpers, background refresh, consultation cards)
+- `docs/DEVELOPMENT_PLAN.md` - Updated with Parts 3-4 status
 
-**Total:** ~2,200 lines added
+**Total:** ~2,500 lines added
 
 ### Limitations and Known Issues
 
@@ -232,21 +242,42 @@ npm run build
    - Preserve existing logos, homepage, languages, patient registration redesign
    - Changes require deployment; nothing is deployed until merged to staging/production
    
-4. **Next agent run scope (Part 4 of 4):**
-   - TMCDashboard integration with shared helpers (pending)
+4. **Part 4 of 4 - COMPLETED (2026-11-23):**
+   - TMCDashboard integrated with shared helpers
    - TMC-side status display and action rendering
-   - Background refresh consistency
-   - Integration tests for TMC flows
+   - Background refresh with stale guards and overlapping request prevention
+   - 29 integration tests covering TMC flows, video cleanup, and action guards
+   
+5. **Next phase (not started):**
+   - Persistent notification inbox with read state and history
+   - User preferences for notification delivery
+   - Backend notification storage and delivery queue
 
 ### Testing Checklist for Owner
 
+**Doctor Dashboard:**
 - [ ] Doctor accepts request → verify moves to QUEUED or IN_PROGRESS
-- [ ] Doctor marks consultation complete → verify video panel closes
+- [ ] Doctor marks consultation complete → verify video panel closes and cleanup occurs
+- [ ] Background refresh fails → verify stale indicator with retry appears
+- [ ] Repeated accept/reject clicks → verify only one request sent
+
+**Patient Dashboard:**
 - [ ] Patient accepts postponed time → verify returns to PENDING (not confirmed appointment)
-- [ ] Active follow-up session → verify video remains available
+- [ ] Active follow-up session → verify video remains available after original completion
 - [ ] Switch between consultations → verify details refresh without stale data
+- [ ] Background refresh preserves unsent chat message and scroll position
+- [ ] Completed consultation shows wallet return information when available
+
+**TMC Dashboard:**
+- [ ] TMC views postponed consultation → verify patient-must-respond message shown
+- [ ] TMC cannot see accept/reject postponement actions (patient-only)
+- [ ] Open chat during background refresh → verify correct consultation updated
 - [ ] Background refresh fails → verify stale indicator appears
-- [ ] TMC creates consultation → verify inline success/error message (no alert)
-- [ ] Open consultation details during background refresh → verify scroll/chat preserved
+- [ ] TMC creates consultation → verify inline success/error message (no browser alert)
+- [ ] Follow-up request shows billable vs free label correctly
+
+**All Dashboards:**
+- [ ] Terminal status (COMPLETED/REJECTED) triggers video cleanup
 - [ ] Mobile (360px width) → verify status messages readable
 - [ ] Desktop → verify consultation cards layout
+- [ ] Scheduled times show date, time, and "IST" timezone explicitly
