@@ -16,6 +16,7 @@ import ConsultationDetailModal from "../../../components/dashboard/ConsultationD
 import ConsultationChatPanel from "../../../components/dashboard/ConsultationChatPanel";
 import { getStatusMessage } from "../../../utils/consultationStatus";
 import { StaleNotification, LoadingNotification } from "../../../components/dashboard/InlineNotification";
+import { useConsultationRefresh } from "../../../hooks/useConsultationRefresh";
 import {
   DoctorProfilePanel,
   DoctorAvailabilityPanel,
@@ -105,6 +106,7 @@ const DoctorDashboard = () => {
   const consultationStatusRef = useRef(new Map());
   const refreshInFlightRef = useRef(false);
   const mountedRef = useRef(true);
+  const selectedIdRef = useRef(null);
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(
     () => typeof window !== "undefined" && window.innerWidth < 768
@@ -189,9 +191,9 @@ const DoctorDashboard = () => {
       setActive(current && !Array.isArray(current) && current.id ? current : null);
       setEarnings(earningData);
 
-      if (selected && selected.id) {
+      if (selected && selected.id && selectedIdRef.current === selected.id) {
         const updatedSelected = historyList.find((c) => c.id === selected.id) || current;
-        if (updatedSelected && updatedSelected.id === selected.id) {
+        if (updatedSelected && updatedSelected.id === selected.id && selectedIdRef.current === selected.id) {
           setSelected((prev) => ({ ...prev, ...updatedSelected }));
         }
       }
@@ -282,6 +284,7 @@ const DoctorDashboard = () => {
   );
 
   const openDetail = async (consultation) => {
+    selectedIdRef.current = consultation.id;
     setSelected(consultation);
     setPrescription(null);
     setRxVersions(null);
@@ -290,6 +293,7 @@ const DoctorDashboard = () => {
       getPrescription(consultation.id).catch(() => null),
       getPrescriptionVersions(consultation.id).catch(() => null),
     ]);
+    if (selectedIdRef.current !== consultation.id) return;
     setEvents(Array.isArray(e) ? e : []);
     setPrescription(rx && rx.id ? rx : null);
     setRxVersions(v && v.version_rows ? v : null);
@@ -881,7 +885,12 @@ const DoctorDashboard = () => {
       <ConsultationDetailModal
         consultation={selected}
         events={events}
-        onClose={() => { setSelected(null); setPrescription(null); setRxVersions(null); }}
+        onClose={() => { 
+          selectedIdRef.current = null;
+          setSelected(null); 
+          setPrescription(null); 
+          setRxVersions(null); 
+        }}
         viewerRole="doctor"
         actions={
           selected?.status === "IN_PROGRESS" && !selected?.is_completed ? (
