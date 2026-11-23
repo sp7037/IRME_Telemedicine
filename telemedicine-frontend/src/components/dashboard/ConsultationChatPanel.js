@@ -8,7 +8,7 @@ const prescriptionMessageText = (message) =>
     .replace(/^PRESCRIPTION_RX:\d+:\s*/, "")
     .replace(/^PRESCRIPTION:\s*/, "");
 
-const ConsultationChatPanel = ({ consultationId, status, pollMs = 6000 }) => {
+const ConsultationChatPanel = ({ consultationId, status, pollMs = 6000, autoFocusInput = false, focusToken = 0 }) => {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sendBusy, setSendBusy] = useState(false);
@@ -17,6 +17,7 @@ const ConsultationChatPanel = ({ consultationId, status, pollMs = 6000 }) => {
   const [file, setFile] = useState(null);
   const threadRef = useRef(null);
   const fileInputRef = useRef(null);
+  const textInputRef = useRef(null);
 
   const canSend = Boolean(consultationId && status && !CLOSED_STATUSES.has(status));
 
@@ -51,6 +52,15 @@ const ConsultationChatPanel = ({ consultationId, status, pollMs = 6000 }) => {
       el.scrollTop = el.scrollHeight;
     });
   }, [messages]);
+
+  useEffect(() => {
+    if (!autoFocusInput && !focusToken) return;
+    const el = textInputRef.current;
+    if (!el) return;
+    requestAnimationFrame(() => {
+      el.focus();
+    });
+  }, [autoFocusInput, focusToken, consultationId, canSend]);
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -123,6 +133,7 @@ const ConsultationChatPanel = ({ consultationId, status, pollMs = 6000 }) => {
       {canSend ? (
         <form onSubmit={onSubmit} style={styles.form}>
           <textarea
+            ref={textInputRef}
             style={styles.ta}
             rows={3}
             placeholder="Type a message..."

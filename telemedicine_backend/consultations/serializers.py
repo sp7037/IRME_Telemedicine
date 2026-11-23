@@ -495,6 +495,8 @@ class ConsultationHistorySerializer(serializers.ModelSerializer):
     video = serializers.SerializerMethodField()
     active_duration_minutes = serializers.SerializerMethodField()
     completion_required = serializers.SerializerMethodField()
+    latest_chat_message = serializers.SerializerMethodField()
+    unread_from_peer = serializers.SerializerMethodField()
 
     class Meta:
         model = Consultation
@@ -505,7 +507,8 @@ class ConsultationHistorySerializer(serializers.ModelSerializer):
             'created_at', 'created_at_formatted', 'queue_number', 'estimated_waiting_time',
             'tmc_name', 'consultation_label', 'billing_type', 'amount_charged',
             'doctor_fee', 'platform_fee', 'discount_amount', 'admin_subsidy_amount', 'follow_up',
-            'video', 'active_duration_minutes', 'completion_required', 'wallet_return'
+            'video', 'active_duration_minutes', 'completion_required', 'wallet_return',
+            'latest_chat_message', 'unread_from_peer',
         ]
     
     def get_doctor(self, obj):
@@ -638,6 +641,61 @@ class ConsultationHistorySerializer(serializers.ModelSerializer):
         if minutes is None:
             return False
         return minutes >= IN_PROGRESS_COMPLETION_REMINDER_HOURS * 60
+
+    def _chat_preview_text(self, message):
+        text = (message or "").strip()
+        if not text:
+            return "[Attachment]"
+        if text.startswith("PRESCRIPTION_RX:") or text.startswith("PRESCRIPTION:"):
+            return "Prescription shared"
+        return text[:180]
+
+    def _peer_user_ids(self, obj):
+        """User IDs that count as the other party for the current viewer."""
+        request = self.context.get("request")
+        user = getattr(request, "user", None) if request else None
+        patient_id = obj.patient.user_id
+        doctor_id = obj.doctor.user_id
+        if not user or not getattr(user, "is_authenticated", False):
+            return {patient_id, doctor_id}
+        if user.id == doctor_id:
+            return {patient_id}
+        if user.id == patient_id:
+            return {doctor_id}
+        # TMC / other participant: treat both patient and doctor messages as peer activity
+        return {patient_id, doctor_id}
+
+    def get_latest_chat_message(self, obj):
+        chats = getattr(obj, "_prefetched_objects_cache", {}).get("chats")
+        if chats is not None:
+            latest = chats[-1] if chats else None
+        else:
+            latest = obj.chats.order_by("-timestamp").first()
+        if not latest:
+            return None
+        sender_role = "other"
+        if latest.sender_id == obj.doctor.user_id:
+            sender_role = "doctor"
+        elif latest.sender_id == obj.patient.user_id:
+            sender_role = "patient"
+        return {
+            "id": latest.id,
+            "message": self._chat_preview_text(latest.message),
+            "timestamp": latest.timestamp,
+            "sender_role": sender_role,
+            "sender_name": (
+                f"{latest.sender.first_name} {latest.sender.last_name}".strip()
+                or latest.sender.email
+            ),
+            "is_read": latest.is_read,
+        }
+
+    def get_unread_from_peer(self, obj):
+        peer_ids = self._peer_user_ids(obj)
+        chats = getattr(obj, "_prefetched_objects_cache", {}).get("chats")
+        if chats is not None:
+            return sum(1 for c in chats if (not c.is_read) and c.sender_id in peer_ids)
+        return obj.chats.filter(is_read=False, sender_id__in=peer_ids).count()
 
 #===================================================================
 # Mark consultation status complete by doctor and cancel by patient

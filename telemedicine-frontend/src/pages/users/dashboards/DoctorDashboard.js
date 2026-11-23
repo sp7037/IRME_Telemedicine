@@ -14,7 +14,9 @@ import {
 import StatusBadge from "../../../components/dashboard/StatusBadge";
 import ConsultationDetailModal from "../../../components/dashboard/ConsultationDetailModal";
 import ConsultationChatPanel from "../../../components/dashboard/ConsultationChatPanel";
+import ConsultationPromptModal from "../../../components/dashboard/ConsultationPromptModal";
 import { getStatusMessage } from "../../../utils/consultationStatus";
+import { getFriendlyVideoError } from "../../../utils/videoErrors";
 import { StaleNotification, LoadingNotification } from "../../../components/dashboard/InlineNotification";
 import {
   DoctorProfilePanel,
@@ -40,6 +42,7 @@ import {
   downloadPrescriptionPdf,
   getPrescriptionVersions,
   getDoctorProfile,
+  requestConsultationVideo,
 } from "../../../api/users";
 
 const NEEDS_CONSULT_DATA = new Set([
@@ -100,9 +103,15 @@ const DoctorDashboard = () => {
   const [notice, setNotice] = useState(null);
   const [isStale, setIsStale] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [acceptPrompt, setAcceptPrompt] = useState(null);
+  const [videoDeclinedNotice, setVideoDeclinedNotice] = useState(null);
+  const [videoWaitingNotice, setVideoWaitingNotice] = useState(null);
+  const [chatFocusToken, setChatFocusToken] = useState(0);
+  const [autoRequestVideo, setAutoRequestVideo] = useState(false);
   const requestSeenRef = useRef(new Map());
   const requestReadyRef = useRef(false);
   const consultationStatusRef = useRef(new Map());
+  const videoStatusRef = useRef(new Map());
   const refreshInFlightRef = useRef(false);
   const mountedRef = useRef(true);
   const selectedIdRef = useRef(null);
@@ -184,6 +193,28 @@ const DoctorDashboard = () => {
         }
       });
       consultationStatusRef.current = new Map(historyList.map((c) => [c.id, c.status]));
+      const nextVideo = new Map();
+      const combinedForVideo = [
+        ...(current && !Array.isArray(current) && current.id ? [current] : []),
+        ...historyList,
+      ];
+      combinedForVideo.forEach((consultation) => {
+        const videoStatus = consultation.video?.status || "NONE";
+        nextVideo.set(consultation.id, videoStatus);
+        const previousVideo = videoStatusRef.current.get(consultation.id);
+        if (previousVideo && previousVideo !== videoStatus) {
+          if (videoStatus === "REJECTED") {
+            setVideoDeclinedNotice(consultation);
+            setVideoWaitingNotice(null);
+          } else if (videoStatus === "REQUESTED") {
+            setVideoWaitingNotice(consultation);
+          } else if (videoStatus === "ACCEPTED") {
+            setVideoWaitingNotice(null);
+            setVideoDeclinedNotice(null);
+          }
+        }
+      });
+      videoStatusRef.current = nextVideo;
       setAll(historyList);
       setPending(pendingList);
       setQueued(Array.isArray(queue) ? queue : []);
@@ -340,13 +371,22 @@ const DoctorDashboard = () => {
       }
       setPostponeDate("");
       await refresh();
-      showNotice(
-        status === "REJECTED" ? "warning" : "success",
-        item?.is_follow_up_request
-          ? status === "REJECTED" ? "Resume chat rejected" : "Resume chat accepted"
-          : status === "POSTPONED" ? "New time suggested" : status === "REJECTED" ? "Consultation request rejected" : "Consultation request accepted",
-        `${formatRequestIdentity(item || { id: consultationId })}.`
-      );
+      if (status === "ACCEPTED") {
+        setAcceptPrompt({
+          id: consultationId,
+          patient_name: item?.patient_name || "Patient",
+          patient: item?.patient || item?.patient_id,
+          is_follow_up_request: Boolean(item?.is_follow_up_request),
+        });
+      } else {
+        showNotice(
+          status === "REJECTED" ? "warning" : "success",
+          item?.is_follow_up_request
+            ? status === "REJECTED" ? "Resume chat rejected" : "Resume chat accepted"
+            : status === "POSTPONED" ? "New time suggested" : "Consultation request rejected",
+          `${formatRequestIdentity(item || { id: consultationId })}.`
+        );
+      }
     } catch (err) {
       const message = err?.response?.data?.error || err?.message || "Could not process this request.";
       showNotice("error", "Action blocked", message);
@@ -497,11 +537,28 @@ const DoctorDashboard = () => {
           <RowCard
             consultation={active}
             emphasis="live"
-            helper={active.video?.status === "REQUESTED" ? "Video request sent. Waiting for patient or TMC to accept." : "Current consultation is live."}
+            helper={
+              active.video?.status === "REQUESTED"
+                ? "Waiting for patient… Video request sent."
+                : active.video?.status === "ACCEPTED"
+                  ? "Patient accepted – join video now."
+                  : active.video?.status === "REJECTED"
+                    ? "Patient declined – continue in chat."
+                    : active.unread_from_peer > 0
+                      ? `New patient message${active.unread_from_peer > 1 ? "s" : ""} waiting.`
+                      : "Current consultation is live. Open chat or request video when ready."
+            }
             actions={
               <div style={styles.rowActions}>
-                <button style={styles.primaryBtn} type="button" onClick={() => openDetail(active)}>
-                  Open Consultation
+                <button
+                  style={styles.primaryBtn}
+                  type="button"
+                  onClick={() => {
+                    setChatFocusToken((n) => n + 1);
+                    openDetail(active);
+                  }}
+                >
+                  {active.unread_from_peer > 0 ? `Open chat (${active.unread_from_peer} new)` : "Open Consultation"}
                 </button>
                 <button
                   style={styles.secondaryBtn}
@@ -881,6 +938,97 @@ const DoctorDashboard = () => {
         </main>
         <Footer />
       </div>
+      <ConsultationPromptModal
+        open={Boolean(acceptPrompt)}
+        title="Consultation request accepted"
+        message={`${acceptPrompt?.patient_name || "Patient"} is ready. Open chat to continue, or start a video request when both of you are prepared.`}
+        actions={[
+          {
+            key: "chat",
+            label: "Open chat",
+            variant: "primary",
+            onClick: async () => {
+              const id = acceptPrompt?.id;
+              setAcceptPrompt(null);
+              const target =
+                [active, ...queued, ...all].find((c) => c?.id === id) ||
+                acceptPrompt;
+              setChatFocusToken((n) => n + 1);
+              await openDetail(target);
+            },
+          },
+          {
+            key: "video",
+            label: "Start video",
+            variant: "secondary",
+            busy: busy,
+            onClick: async () => {
+              const id = acceptPrompt?.id;
+              const target =
+                [active, ...queued, ...all].find((c) => c?.id === id) ||
+                acceptPrompt;
+              setAcceptPrompt(null);
+              setBusy(true);
+              try {
+                await requestConsultationVideo(id);
+                setVideoWaitingNotice(target);
+                setChatFocusToken((n) => n + 1);
+                await openDetail(target);
+                await refresh();
+              } catch (err) {
+                showNotice("error", "Video unavailable", getFriendlyVideoError(err));
+                setChatFocusToken((n) => n + 1);
+                await openDetail(target);
+              } finally {
+                setBusy(false);
+              }
+            },
+          },
+        ]}
+        onClose={() => setAcceptPrompt(null)}
+      />
+
+      <ConsultationPromptModal
+        open={Boolean(videoDeclinedNotice)}
+        title="Patient chose to continue in chat"
+        message={`Patient declined video for consultation #${videoDeclinedNotice?.id}. Chat remains available, and you can request video again later.`}
+        actions={[
+          {
+            key: "open-chat",
+            label: "Open chat",
+            variant: "primary",
+            onClick: async () => {
+              const target = videoDeclinedNotice;
+              setVideoDeclinedNotice(null);
+              setChatFocusToken((n) => n + 1);
+              await openDetail(target);
+            },
+          },
+          {
+            key: "request-again",
+            label: "Request video again",
+            variant: "secondary",
+            busy: busy,
+            onClick: async () => {
+              const target = videoDeclinedNotice;
+              setBusy(true);
+              try {
+                await requestConsultationVideo(target.id);
+                setVideoDeclinedNotice(null);
+                setVideoWaitingNotice(target);
+                await openDetail(target);
+                await refresh();
+              } catch (err) {
+                showNotice("error", "Video unavailable", getFriendlyVideoError(err));
+              } finally {
+                setBusy(false);
+              }
+            },
+          },
+        ]}
+        onClose={() => setVideoDeclinedNotice(null)}
+      />
+
       <ConsultationDetailModal
         consultation={selected}
         events={events}
@@ -888,9 +1036,24 @@ const DoctorDashboard = () => {
           selectedIdRef.current = null;
           setSelected(null); 
           setPrescription(null); 
-          setRxVersions(null); 
+          setRxVersions(null);
+          setAutoRequestVideo(false);
         }}
         viewerRole="doctor"
+        autoRequestVideo={autoRequestVideo}
+        onVideoStateChange={(video) => {
+          if (video?.status === "REQUESTED" && selected) {
+            setVideoWaitingNotice({ ...selected, video });
+          }
+          if (video?.status === "REJECTED" && selected) {
+            setVideoDeclinedNotice({ ...selected, video });
+            setVideoWaitingNotice(null);
+          }
+          if (video?.status === "ACCEPTED") {
+            setVideoWaitingNotice(null);
+            setVideoDeclinedNotice(null);
+          }
+        }}
         actions={
           selected?.status === "IN_PROGRESS" && !selected?.is_completed ? (
             <button type="button" style={styles.completeBtn} disabled={busy} onClick={handleCompleteSelected}>
@@ -905,7 +1068,13 @@ const DoctorDashboard = () => {
             Mark it complete before continuing chat or video.
           </div>
         ) : selected ? (
-          <ConsultationChatPanel consultationId={selected.id} status={selected.status} pollMs={5000} />
+          <ConsultationChatPanel
+            consultationId={selected.id}
+            status={selected.status}
+            pollMs={5000}
+            autoFocusInput={chatFocusToken > 0}
+            focusToken={chatFocusToken}
+          />
         ) : null}
         {selected ? (
           <DoctorPrescriptionPanel
@@ -1258,8 +1427,14 @@ const RowCard = ({ consultation, label, actions, helper, emphasis }) => {
           Patient: {consultation.patient_name || "-"}
           {consultation.is_follow_up_request ? <span style={styles.followTag}>Follow-up</span> : null}
           {!consultation.is_follow_up_request && consultation.status === "PENDING" ? <span style={styles.newTag}>New request</span> : null}
-          {consultation.video?.status === "REQUESTED" ? <span style={styles.videoTag}>Video waiting</span> : null}
-          {consultation.video?.status === "ACCEPTED" ? <span style={styles.liveTag}>Video ready</span> : null}
+          {consultation.video?.status === "REQUESTED" ? <span style={styles.videoTag}>Waiting for patient…</span> : null}
+          {consultation.video?.status === "ACCEPTED" ? <span style={styles.liveTag}>Patient accepted – join now</span> : null}
+          {consultation.video?.status === "REJECTED" ? <span style={styles.newTag}>Patient declined – continue in chat</span> : null}
+          {consultation.unread_from_peer > 0 ? (
+            <span style={styles.liveTag} aria-label="Unread patient messages">
+              {consultation.unread_from_peer} new
+            </span>
+          ) : null}
           {label ? <span style={styles.queueTag}>{label}</span> : null}
         </div>
         <div style={styles.rowMeta}>

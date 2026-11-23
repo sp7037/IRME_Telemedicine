@@ -60,7 +60,7 @@ from .utils import generate_prescription_pdf
 from .services import transition_consultation, add_to_queue, TransitionError
 from .permissions import get_owned_tmc_profile
 from .video import VideoProviderError, get_or_create_video_join, video_config_status
-from .video import request_video_session, respond_to_video_session
+from .video import client_video_error_payload, request_video_session, respond_to_video_session
 from .finance import (
     InsufficientBalanceError,
     cancel_patient_recharge_request,
@@ -481,16 +481,16 @@ class ConsultationHistoryView(APIView):
         if hasattr(user, "patient_profile"):
             consultations = Consultation.objects.filter(
                 patient=user.patient_profile
-            ).select_related("finance", "payment").order_by("-created_at")
+            ).select_related("finance", "payment", "patient__user", "doctor__user").prefetch_related("chats").order_by("-created_at")
         elif hasattr(user, "doctor_profile"):
             consultations = Consultation.objects.filter(
                 doctor=user.doctor_profile
-            ).select_related("finance", "payment").order_by("-created_at")
+            ).select_related("finance", "payment", "patient__user", "doctor__user").prefetch_related("chats").order_by("-created_at")
         elif _get_tmc_profile(user):
             tmc_profile = _get_tmc_profile(user)
             consultations = Consultation.objects.filter(
                 tmc=tmc_profile
-            ).select_related("finance", "payment").order_by("-created_at")
+            ).select_related("finance", "payment", "patient__user", "doctor__user").prefetch_related("chats").order_by("-created_at")
         else:
             return Response(
                 {"error": "User does not have a patient, doctor, or TMC profile."},
@@ -501,7 +501,9 @@ class ConsultationHistoryView(APIView):
             return Response({"message": "No past consultations found."}, status=status.HTTP_200_OK)
 
         # 🔹 Serialize the consultations using ConsultationHistorySerializer
-        serializer = ConsultationHistorySerializer(consultations, many=True)
+        serializer = ConsultationHistorySerializer(
+            consultations, many=True, context={"request": request}
+        )
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -1045,9 +1047,14 @@ class ConsultationChatHistoryView(generics.ListAPIView):
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
+        # Opening chat marks peer messages as read for unread indicators on dashboards.
+        consultation_id = self.kwargs.get("consultation_id")
+        if queryset.exists() and request.user and request.user.is_authenticated:
+            queryset.exclude(sender=request.user).filter(is_read=False).update(is_read=True)
+            queryset = ConsultationChat.objects.filter(consultation_id=consultation_id).order_by("timestamp")
         serializer = self.get_serializer(queryset, many=True, context={'request': request})
         return Response({
-            "consultation_id": self.kwargs.get("consultation_id"),
+            "consultation_id": consultation_id,
             "chat_history": serializer.data
         })
 
@@ -1956,7 +1963,7 @@ class ConsultationVideoJoinView(APIView):
         try:
             return Response(get_or_create_video_join(consultation, request.user), status=200)
         except VideoProviderError as exc:
-            return Response({"error": str(exc), "config": video_config_status()}, status=400)
+            return Response(client_video_error_payload(exc, request.user), status=400)
 
 
 class ConsultationVideoRequestView(APIView):
@@ -1985,7 +1992,7 @@ class ConsultationVideoRequestView(APIView):
         try:
             video = request_video_session(consultation, request.user)
         except VideoProviderError as exc:
-            return Response({"error": str(exc), "config": video_config_status()}, status=400)
+            return Response(client_video_error_payload(exc, request.user), status=400)
         return Response({"message": "Video request sent.", "video": video}, status=200)
 
 
@@ -2006,7 +2013,7 @@ class ConsultationVideoRespondView(APIView):
                 str(request.data.get("action") or "").lower(),
             )
         except VideoProviderError as exc:
-            return Response({"error": str(exc), "config": video_config_status()}, status=400)
+            return Response(client_video_error_payload(exc, request.user), status=400)
         return Response({"message": f"Video request {video['status'].lower()}.", "video": video}, status=200)
 
 
