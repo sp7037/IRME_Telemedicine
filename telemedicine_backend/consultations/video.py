@@ -184,13 +184,46 @@ def video_config_status():
     }
 
 
+VIDEO_UNAVAILABLE_CLIENT_MESSAGE = (
+    "Video is temporarily unavailable. Please continue in chat."
+)
+
+
 def _configuration_error_message(provider=None):
+    """Log detailed config gaps; return a participant-safe message (no env var names)."""
     status = video_config_status()
     provider = provider or status["provider"]
     missing = ", ".join(status["missing"])
     if missing:
-        return f"{provider} video is not configured. Missing or invalid: {missing}."
-    return f"{provider} video is not configured correctly."
+        logger.error(
+            "%s video is not configured. Missing or invalid: %s",
+            provider,
+            missing,
+        )
+    else:
+        logger.error("%s video is not configured correctly.", provider)
+    return VIDEO_UNAVAILABLE_CLIENT_MESSAGE
+
+
+def client_video_error_payload(exc, user=None):
+    """
+    Build an API error payload for video failures.
+    Raw config keys stay in server logs / staff responses only.
+    """
+    message = str(exc) or VIDEO_UNAVAILABLE_CLIENT_MESSAGE
+    status = video_config_status()
+    looks_like_config = (
+        not status.get("ready")
+        or "not configured" in message.lower()
+        or "CLOUDFLARE_" in message
+        or message == VIDEO_UNAVAILABLE_CLIENT_MESSAGE
+    )
+    if looks_like_config:
+        message = VIDEO_UNAVAILABLE_CLIENT_MESSAGE
+    payload = {"error": message}
+    if user is not None and getattr(user, "is_staff", False):
+        payload["config"] = status
+    return payload
 
 
 def _video_state(session):

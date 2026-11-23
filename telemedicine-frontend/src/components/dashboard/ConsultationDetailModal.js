@@ -5,9 +5,20 @@ import VideoPanel from "./VideoPanel";
 import { getConsultationVideoJoin, requestConsultationVideo, respondConsultationVideo } from "../../api/users";
 import { isTerminalStatus, getStatusMessage } from "../../utils/consultationStatus";
 import { shouldCloseVideo, shouldClearCredentials, cleanupVideoSession } from "../../utils/videoLifecycle";
+import { getFriendlyVideoError } from "../../utils/videoErrors";
 import InlineNotification from "./InlineNotification";
 
-const ConsultationDetailModal = ({ consultation, events, onClose, actions, children, viewerRole = "patient" }) => {
+const ConsultationDetailModal = ({
+  consultation,
+  events,
+  onClose,
+  actions,
+  children,
+  viewerRole = "patient",
+  onVideoStateChange,
+  autoRequestVideo = false,
+  autoOpenVideo = false,
+}) => {
   const [minimized, setMinimized] = useState(false);
   const [timelineOpen, setTimelineOpen] = useState(false);
   const [videoOpen, setVideoOpen] = useState(false);
@@ -90,46 +101,45 @@ const ConsultationDetailModal = ({ consultation, events, onClose, actions, child
     };
   }, []);
 
-  if (!consultation) return null;
+  const applyVideoState = useCallback((next) => {
+    setVideoState(next);
+    if (typeof onVideoStateChange === "function") {
+      onVideoStateChange(next, consultation);
+    }
+  }, [consultation, onVideoStateChange]);
 
-  const videoErrorMessage = (err, fallback) => {
-    const data = err?.response?.data;
-    const base = data?.error || err.message || fallback;
-    const missing = Array.isArray(data?.config?.missing) && data.config.missing.length && !base.includes("Missing or invalid:")
-      ? ` Missing or invalid: ${data.config.missing.join(", ")}.`
-      : "";
-    return `${base}${missing}`;
-  };
-
-  const requestVideo = async () => {
+  const requestVideo = useCallback(async () => {
+    if (!consultation?.id) return;
     setVideoError("");
     setVideoLoading(true);
     try {
       const data = await requestConsultationVideo(consultation.id);
-      setVideoState(data.video || { status: "REQUESTED" });
+      applyVideoState(data.video || { status: "REQUESTED" });
       setVideoOpen(false);
     } catch (err) {
-      setVideoError(videoErrorMessage(err, "Could not request video consultation."));
+      setVideoError(getFriendlyVideoError(err, "Could not request video consultation."));
     } finally {
       setVideoLoading(false);
     }
-  };
+  }, [applyVideoState, consultation?.id]);
 
-  const respondVideo = async (action) => {
+  const respondVideo = useCallback(async (action) => {
+    if (!consultation?.id) return;
     setVideoError("");
     setVideoLoading(true);
     try {
       const data = await respondConsultationVideo(consultation.id, action);
-      setVideoState(data.video || { status: action === "accept" ? "ACCEPTED" : "REJECTED" });
+      applyVideoState(data.video || { status: action === "accept" ? "ACCEPTED" : "REJECTED" });
       setVideoOpen(false);
     } catch (err) {
-      setVideoError(videoErrorMessage(err, "Could not respond to video request."));
+      setVideoError(getFriendlyVideoError(err, "Could not respond to video request."));
     } finally {
       setVideoLoading(false);
     }
-  };
+  }, [applyVideoState, consultation?.id]);
 
-  const openVideo = async () => {
+  const openVideo = useCallback(async () => {
+    if (!consultation?.id) return;
     setVideoOpen(true);
     setVideoError("");
     if (videoJoin?.consultation_id === consultation.id) return;
@@ -138,11 +148,29 @@ const ConsultationDetailModal = ({ consultation, events, onClose, actions, child
       const data = await getConsultationVideoJoin(consultation.id);
       setVideoJoin(data);
     } catch (err) {
-      setVideoError(videoErrorMessage(err, "Could not prepare video consultation."));
+      setVideoError(getFriendlyVideoError(err, "Could not prepare video consultation."));
     } finally {
       setVideoLoading(false);
     }
-  };
+  }, [consultation?.id, videoJoin?.consultation_id]);
+
+  useEffect(() => {
+    if (!autoRequestVideo || !consultation?.id || viewerRole !== "doctor") return;
+    if ((videoState?.status || "NONE") !== "NONE" && videoState?.status !== "REJECTED") return;
+    requestVideo();
+    // Intentionally run once when autoRequestVideo flips on for this consultation
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoRequestVideo, consultation?.id]);
+
+  useEffect(() => {
+    if (!autoOpenVideo || !consultation?.id) return;
+    if ((videoState?.status || "NONE") !== "ACCEPTED") return;
+    openVideo();
+    // Intentionally run when parent asks to join after accept
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoOpenVideo, consultation?.id, videoState?.status]);
+
+  if (!consultation) return null;
 
   const renderVideoActions = () => {
     const status = videoState?.status || "NONE";
@@ -264,10 +292,15 @@ const ConsultationDetailModal = ({ consultation, events, onClose, actions, child
             <div style={styles.videoNotice}>The doctor requested a video consultation. Accept when you are comfortable.</div>
           ) : null}
           {!videoOpen && videoState?.status === "REQUESTED" && viewerRole === "doctor" ? (
-            <div style={styles.videoNotice}>Video request sent. Waiting for the patient or TMC to accept.</div>
+            <div style={styles.videoNotice}>Waiting for patient… Video request sent. Chat remains available.</div>
+          ) : null}
+          {!videoOpen && videoState?.status === "ACCEPTED" ? (
+            <div style={styles.videoNotice}>
+              {viewerRole === "doctor" ? "Patient accepted – join now when you are ready." : "Video is ready – join now when you are ready."}
+            </div>
           ) : null}
           {!videoOpen && videoState?.status === "REJECTED" && viewerRole === "doctor" ? (
-            <div style={styles.videoError}>Video request was rejected. You can request again when the patient or TMC is ready.</div>
+            <div style={styles.videoError}>Patient declined – continue in chat. You can request video again when ready.</div>
           ) : null}
           {!videoOpen && consultation?.completion_required && viewerRole === "doctor" ? (
             <div style={styles.videoError}>

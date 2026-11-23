@@ -9,7 +9,9 @@ import Sidebar from "../../../components/Sidebar";
 import StatusBadge from "../../../components/dashboard/StatusBadge";
 import ConsultationDetailModal from "../../../components/dashboard/ConsultationDetailModal";
 import ConsultationChatPanel from "../../../components/dashboard/ConsultationChatPanel";
+import ConsultationPromptModal from "../../../components/dashboard/ConsultationPromptModal";
 import { getStatusMessage } from "../../../utils/consultationStatus";
+import { getFriendlyVideoError } from "../../../utils/videoErrors";
 import { StaleNotification } from "../../../components/dashboard/InlineNotification";
 import {
   getUserProfile,
@@ -163,8 +165,13 @@ const PatientDashboardRefined = () => {
   const [notice, setNotice] = useState(null);
   const [followUpMsg, setFollowUpMsg] = useState("");
   const [isStale, setIsStale] = useState(false);
+  const [flowPrompt, setFlowPrompt] = useState(null);
+  const [chatFocusToken, setChatFocusToken] = useState(0);
+  const [openVideoOnJoin, setOpenVideoOnJoin] = useState(false);
   const consultationStatusRef = useRef(new Map());
   const statusReadyRef = useRef(false);
+  const videoStatusRef = useRef(new Map());
+  const latestChatRef = useRef(new Map());
   const selectedIdRef = useRef(null);
   const mountedRef = useRef(true);
 
@@ -256,14 +263,50 @@ const PatientDashboardRefined = () => {
       const historyList = Array.isArray(history) ? history : [];
       const currentConsultation = current && !Array.isArray(current) && current.id ? current : null;
       const statusSnapshot = new Map();
+      const nextVideo = new Map();
+      const nextChat = new Map();
       [currentConsultation, ...historyList].filter(Boolean).forEach((consultation) => {
         statusSnapshot.set(consultation.id, consultation.status);
         const previousStatus = consultationStatusRef.current.get(consultation.id);
         if (statusReadyRef.current && previousStatus && previousStatus !== consultation.status) {
-          const update = statusNoticeFor(consultation);
-          if (update) showNotice(update.type, update.title, update.body);
+          if (consultation.status === "ACCEPTED" || consultation.status === "QUEUED") {
+            setFlowPrompt({ kind: "accepted", consultation });
+          } else if (consultation.status === "IN_PROGRESS") {
+            setFlowPrompt({ kind: "chat-started", consultation });
+          } else {
+            const update = statusNoticeFor(consultation);
+            if (update) showNotice(update.type, update.title, update.body);
+          }
+        }
+
+        const videoStatus = consultation.video?.status || "NONE";
+        nextVideo.set(consultation.id, videoStatus);
+        const previousVideo = videoStatusRef.current.get(consultation.id);
+        if (statusReadyRef.current && previousVideo !== videoStatus) {
+          if (videoStatus === "REQUESTED") {
+            setFlowPrompt({ kind: "video-requested", consultation, pulse: true });
+          } else if (videoStatus === "ACCEPTED") {
+            setFlowPrompt({ kind: "video-accepted", consultation });
+          }
+        }
+
+        const latest = consultation.latest_chat_message;
+        if (latest?.id) {
+          nextChat.set(consultation.id, latest.id);
+          const previousLatest = latestChatRef.current.get(consultation.id);
+          if (
+            statusReadyRef.current &&
+            previousLatest &&
+            previousLatest !== latest.id &&
+            latest.sender_role === "doctor" &&
+            selectedIdRef.current !== consultation.id
+          ) {
+            setFlowPrompt({ kind: "chat-message", consultation });
+          }
         }
       });
+      videoStatusRef.current = nextVideo;
+      latestChatRef.current = nextChat;
       consultationStatusRef.current = statusSnapshot;
       statusReadyRef.current = true;
       setDoctors(Array.isArray(docs.data) ? docs.data : []);
@@ -380,29 +423,148 @@ const PatientDashboardRefined = () => {
     [active, consultations]
   );
 
+  useEffect(() => {
+    if (!videoActionConsultation) return;
+    setFlowPrompt((prev) => {
+      if (prev?.kind === "video-requested" && prev?.consultation?.id === videoActionConsultation.id) {
+        return prev;
+      }
+      return { kind: "video-requested", consultation: videoActionConsultation, pulse: true };
+    });
+  }, [videoActionConsultation]);
+
+  const openChat = async (consultation, { focus = true, joinVideo = false } = {}) => {
+    if (focus) setChatFocusToken((n) => n + 1);
+    setOpenVideoOnJoin(Boolean(joinVideo));
+    setFlowPrompt(null);
+    await openDetails(consultation);
+  };
+
   const respondToVideoRequest = async (consultation, action) => {
     setBusy(true);
     try {
       await respondConsultationVideo(consultation.id, action);
       await refresh();
-      showNotice(
-        action === "accept" ? "success" : "warning",
-        action === "accept" ? "Video request accepted" : "Video request rejected",
-        action === "accept"
-          ? "The video room is ready. Open the consultation and join when your camera and mic are ready."
-          : "The doctor has been notified that you are not ready for video."
-      );
       if (action === "accept") {
-        await openDetails({ ...consultation, video: { ...(consultation.video || {}), status: "ACCEPTED" } });
+        setFlowPrompt({
+          kind: "video-accepted",
+          consultation: { ...consultation, video: { ...(consultation.video || {}), status: "ACCEPTED" } },
+        });
+      } else {
+        setFlowPrompt(null);
+        showNotice(
+          "warning",
+          "Continuing in chat",
+          "The doctor has been notified that you chose to continue in chat."
+        );
       }
     } catch (err) {
-      showNotice("error", "Video response failed", err?.response?.data?.error || err?.message || "Could not respond to video request.");
+      showNotice("error", "Video response failed", getFriendlyVideoError(err, "Could not respond to video request."));
     } finally {
       setBusy(false);
     }
   };
 
-  const reviewConsultation = async (doctorId) => {
+  const flowPromptActions = () => {
+    const consultation = flowPrompt?.consultation;
+    if (!consultation) return [];
+    if (flowPrompt.kind === "accepted") {
+      return [
+        {
+          key: "chat",
+          label: "Open chat",
+          variant: "primary",
+          onClick: () => openChat(consultation),
+        },
+      ];
+    }
+    if (flowPrompt.kind === "chat-started" || flowPrompt.kind === "chat-message") {
+      return [
+        {
+          key: "reply",
+          label: flowPrompt.kind === "chat-message" ? "Reply" : "Join chat",
+          variant: "primary",
+          onClick: () => openChat(consultation, { focus: true }),
+        },
+      ];
+    }
+    if (flowPrompt.kind === "video-requested") {
+      return [
+        {
+          key: "join-video",
+          label: "Join video",
+          variant: "primary",
+          busy,
+          onClick: async () => {
+            await respondToVideoRequest(consultation, "accept");
+          },
+        },
+        {
+          key: "continue-chat",
+          label: "Continue in chat",
+          variant: "secondary",
+          busy,
+          onClick: async () => {
+            await respondToVideoRequest(consultation, "reject");
+            await openChat(consultation);
+          },
+        },
+      ];
+    }
+    if (flowPrompt.kind === "video-accepted") {
+      return [
+        {
+          key: "join-room",
+          label: "Join video room",
+          variant: "primary",
+          onClick: () => openChat(consultation, { focus: false, joinVideo: true }),
+        },
+        {
+          key: "chat",
+          label: "Continue in chat",
+          variant: "secondary",
+          onClick: () => openChat(consultation),
+        },
+      ];
+    }
+    return [];
+  };
+
+  const flowPromptTitle = () => {
+    const c = flowPrompt?.consultation;
+    const doctor = c?.doctor_name ? `Dr ${c.doctor_name.replace(/^Dr\.?\s*/i, "")}` : "Doctor";
+    if (flowPrompt?.kind === "accepted") {
+      return `${doctor} accepted your request. Waiting for the doctor to start the consultation.`;
+    }
+    if (flowPrompt?.kind === "chat-started") return "Doctor started chat: Join chat";
+    if (flowPrompt?.kind === "chat-message") return "Doctor started the chat, please reply";
+    if (flowPrompt?.kind === "video-requested") return "Doctor requested video";
+    if (flowPrompt?.kind === "video-accepted") return "Video accepted – join now";
+    return "Consultation update";
+  };
+
+  const flowPromptMessage = () => {
+    if (flowPrompt?.kind === "accepted") {
+      return "You can open the chat at any time. We will update this prompt when the doctor starts chat or requests video.";
+    }
+    if (flowPrompt?.kind === "chat-started") {
+      return "The doctor is ready in chat. Join when you are ready — video is optional.";
+    }
+    if (flowPrompt?.kind === "chat-message") {
+      return "A new message from your doctor is waiting.";
+    }
+    if (flowPrompt?.kind === "video-requested") {
+      return "Join video when you are ready, or continue in chat. Video is never required.";
+    }
+    if (flowPrompt?.kind === "video-accepted") {
+      return "Both sides can join the video room. Chat remains available.";
+    }
+    return "";
+  };
+
+  const reviewConsultation = async (doctor) => {
+    const doctorId = typeof doctor === "object" ? doctor.id : doctor;
+    const doctorCard = typeof doctor === "object" ? doctor : doctors.find((d) => String(d.id) === String(doctorId));
     setBusy(true);
     setBookError("");
     setBookingReview(null);
@@ -410,7 +572,7 @@ const PatientDashboardRefined = () => {
       const response = await axios.get(`${API_BASE_URL}/consultations/book-consultation/preview/`, {
         params: { doctor_id: doctorId }, headers: { Authorization: `Bearer ${getAccessToken()}` },
       });
-      setBookingReview(response.data);
+      setBookingReview({ ...response.data, doctor: doctorCard || null });
     } catch (err) {
       setBookError(formatBookingError(err));
     } finally {
@@ -645,29 +807,6 @@ const PatientDashboardRefined = () => {
 
   const renderActiveConsultationSection = () => (
     <>
-      {videoActionConsultation ? (
-        <section style={styles.actionPanel} role="alert" aria-live="assertive">
-          <div>
-            <div style={styles.actionEyebrow}>Action needed now</div>
-            <h3 style={styles.actionTitle}>Doctor requested a video call</h3>
-            <p style={styles.actionText}>
-              Dr. {videoActionConsultation.doctor_name || "Doctor"} is asking to start video for consultation #{videoActionConsultation.id}.
-              Accept to open the video room, or reject if you are not ready.
-            </p>
-          </div>
-          <div style={styles.actionButtons}>
-            <button type="button" style={styles.primaryBtn} disabled={busy} onClick={() => respondToVideoRequest(videoActionConsultation, "accept")}>
-              Accept video
-            </button>
-            <button type="button" style={styles.warnBtn} disabled={busy} onClick={() => respondToVideoRequest(videoActionConsultation, "reject")}>
-              Reject
-            </button>
-            <button type="button" style={styles.secondaryBtn} onClick={() => openDetails(videoActionConsultation)}>
-              View consultation
-            </button>
-          </div>
-        </section>
-      ) : null}
       <section style={styles.section}>
         <h3 style={styles.sectionTitle}>Active consultation</h3>
         {!active ? (
@@ -675,9 +814,38 @@ const PatientDashboardRefined = () => {
         ) : (
           <ConsultationCard
             consultation={active}
-            helper={active.video?.status === "REQUESTED" ? "Video request pending. Please accept or reject above." : "Consultation is live."}
-            emphasis={active.video?.status === "REQUESTED" ? "urgent" : "live"}
-            actions={<button style={styles.primaryBtn} onClick={() => openDetails(active)}>Open chat / details</button>}
+            helper={
+              active.video?.status === "REQUESTED"
+                ? "Doctor requested video: Join video / Continue in chat"
+                : active.video?.status === "ACCEPTED"
+                  ? "Video is ready – join the room when you are prepared."
+                  : active.unread_from_peer > 0
+                    ? "Doctor started the chat, please reply"
+                    : active.latest_chat_message?.sender_role === "doctor"
+                      ? "Doctor started chat — open to continue."
+                      : "Consultation is live. Chat is available anytime."
+            }
+            emphasis={
+              active.video?.status === "REQUESTED" || active.unread_from_peer > 0 ? "urgent" : "live"
+            }
+            actions={
+              <div style={styles.actionButtons}>
+                {active.unread_from_peer > 0 || active.latest_chat_message?.sender_role === "doctor" ? (
+                  <button style={styles.primaryBtn} onClick={() => openChat(active, { focus: true })}>
+                    Reply
+                  </button>
+                ) : (
+                  <button style={styles.primaryBtn} onClick={() => openChat(active)}>
+                    Open chat
+                  </button>
+                )}
+                {active.video?.status === "ACCEPTED" ? (
+                  <button style={styles.secondaryBtn} onClick={() => openChat(active, { joinVideo: true })}>
+                    Join video room
+                  </button>
+                ) : null}
+              </div>
+            }
           />
         )}
       </section>
@@ -691,8 +859,11 @@ const PatientDashboardRefined = () => {
         title: "In queue",
         empty: "No queued consultations.",
         items: grouped.QUEUED,
-        helper: (c) => `Doctor accepted. Queue #${c.queue_number || "-"}.`,
-        emphasis: undefined,
+        helper: (c) =>
+          c.latest_chat_message?.sender_role === "doctor"
+            ? "Doctor started the chat, please reply"
+            : `Doctor accepted. Queue #${c.queue_number || "-"}. Waiting for the doctor to start.`,
+        emphasis: (c) => (c.unread_from_peer > 0 ? "urgent" : undefined),
       },
       {
         key: "PENDING",
@@ -786,9 +957,14 @@ const PatientDashboardRefined = () => {
                         </button>
                       </div>
                     ) : (
-                      <button style={styles.secondaryBtn} onClick={() => openDetails(c)}>
-                        Details
-                      </button>
+                      <div style={styles.rowActions}>
+                        <button
+                          style={styles.primaryBtn}
+                          onClick={() => openChat(c, { focus: c.unread_from_peer > 0 || c.latest_chat_message?.sender_role === "doctor" })}
+                        >
+                          {c.unread_from_peer > 0 || c.latest_chat_message?.sender_role === "doctor" ? "Reply" : "Open chat"}
+                        </button>
+                      </div>
                     )
                   }
                 />
@@ -858,7 +1034,7 @@ const PatientDashboardRefined = () => {
                 <small>Review the full fee, including any platform charge, before confirming.</small>
               </div>
             </div>
-            <button disabled={busy} style={styles.primaryBtn} onClick={() => reviewConsultation(d.id)}>
+            <button disabled={busy} style={styles.primaryBtn} onClick={() => reviewConsultation(d)}>
               Review fee & consult
             </button>
           </div>
@@ -1063,22 +1239,47 @@ const PatientDashboardRefined = () => {
           </button>
           {walletExpanded ? renderWalletAndOverview() : null}
           <div ref={paymentReviewRef}>
-            <PatientBookingReview preview={bookingReview} busy={busy}
+            <PatientBookingReview
+              preview={bookingReview}
+              doctor={bookingReview?.doctor}
+              busy={busy}
               onConfirm={() => bookingReview?.can_request && requestConsultation(bookingReview.doctor_id, bookingReview.total)}
-              onCancel={() => setBookingReview(null)} onFunds={() => setWalletExpanded(true)} />
+              onCancel={() => setBookingReview(null)}
+              onFunds={() => setWalletExpanded(true)}
+            />
           </div>
           {renderMain()}
         </main>
         <Footer />
       </div>
+      <ConsultationPromptModal
+        open={Boolean(flowPrompt)}
+        title={flowPromptTitle()}
+        message={flowPromptMessage()}
+        preview={
+          flowPrompt?.kind === "chat-message"
+            ? flowPrompt?.consultation?.latest_chat_message?.message
+            : null
+        }
+        pulse={Boolean(flowPrompt?.pulse || flowPrompt?.kind === "video-requested")}
+        actions={flowPromptActions()}
+        onClose={
+          flowPrompt?.kind === "video-requested"
+            ? undefined
+            : () => setFlowPrompt(null)
+        }
+      />
+
       <ConsultationDetailModal 
         consultation={selected} 
         events={events} 
         onClose={() => { 
           selectedIdRef.current = null;
-          setSelected(null); 
+          setSelected(null);
+          setOpenVideoOnJoin(false);
         }} 
         viewerRole="patient"
+        autoOpenVideo={openVideoOnJoin}
       >
         {selected && selectedChatStatus === "COMPLETED" ? (
           <div style={styles.followUpBox}>
@@ -1100,7 +1301,13 @@ const PatientDashboardRefined = () => {
           </div>
         ) : null}
         {selected ? (
-          <ConsultationChatPanel consultationId={selected.id} status={selectedChatStatus} pollMs={5000} />
+          <ConsultationChatPanel
+            consultationId={selected.id}
+            status={selectedChatStatus}
+            pollMs={5000}
+            autoFocusInput={chatFocusToken > 0}
+            focusToken={chatFocusToken}
+          />
         ) : null}
         {selected && prescriptionMap[selected.id] ? (
           <div style={styles.sectionInset}>
@@ -1122,6 +1329,8 @@ const ConsultationCard = ({ consultation, helper, actions, emphasis }) => {
   const statusInfo = getStatusMessage(consultation, 'patient');
   const displayHelper = helper || statusInfo?.message;
   const displayEmphasis = emphasis || (statusInfo?.severity === 'urgent' ? 'urgent' : statusInfo?.severity === 'success' ? 'live' : undefined);
+  const latest = consultation.latest_chat_message;
+  const unread = consultation.unread_from_peer > 0;
 
   return (
     <article style={{ ...styles.card, ...(displayEmphasis ? styles[`card${displayEmphasis}`] : {}) }}>
@@ -1129,6 +1338,8 @@ const ConsultationCard = ({ consultation, helper, actions, emphasis }) => {
         <div style={styles.rowTitle}>
           Dr. {consultation.doctor_name}
           {consultation.video?.status === "REQUESTED" ? <span style={styles.videoTag}>Video requested</span> : null}
+          {consultation.video?.status === "ACCEPTED" ? <span style={styles.liveTag}>Join video</span> : null}
+          {unread ? <span style={styles.videoTag} aria-label="Unread doctor messages">{consultation.unread_from_peer} new</span> : null}
           {followUpStatusLabel(consultation) ? (
             <span style={consultation.follow_up?.active_status === "IN_PROGRESS" ? styles.liveTag : styles.waitingTag}>
               {followUpStatusLabel(consultation)}
@@ -1146,6 +1357,12 @@ const ConsultationCard = ({ consultation, helper, actions, emphasis }) => {
           <StatusBadge status={consultation.status} />
         </div>
         {displayHelper ? <p style={styles.helper}>{displayHelper}</p> : null}
+        {latest?.sender_role === "doctor" && latest?.message ? (
+          <blockquote style={styles.messagePreview}>
+            <div style={styles.messagePreviewLabel}>Latest from doctor</div>
+            <div>{latest.message}</div>
+          </blockquote>
+        ) : null}
       </div>
       {actions}
     </article>
@@ -1349,6 +1566,22 @@ const styles = {
     display: "inline-block",
   },
   helper: { color: "#244a75", fontSize: 13, marginTop: 8, marginBottom: 0 },
+  messagePreview: {
+    margin: "10px 0 0",
+    padding: "10px 12px",
+    background: "#f5faf9",
+    borderLeft: "3px solid #13A89E",
+    borderRadius: 8,
+    color: "#0B2545",
+    fontSize: 13,
+    lineHeight: 1.4,
+  },
+  messagePreviewLabel: {
+    fontSize: 11,
+    fontWeight: 700,
+    color: "#4c6480",
+    marginBottom: 4,
+  },
   rowActions: { display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" },
   primaryBtn: {
     background: "#1762bf",
